@@ -4,4 +4,15 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ['*.js', '*.mjs', '*.cjs', 'apps/*/*.mjs', 'apps/*/*.js', 'apps/*/.next/types/*.ts'],
+          defaultProject: 'tsconfig.eslint.json',
+        },
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  }
 );
