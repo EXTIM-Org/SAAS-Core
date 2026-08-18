@@ -1,1 +1,4 @@
-{ "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs"], "exclude": ["node_modules", "dist", "apps/dashboard/.next", "apps/website/.next"] }
+{
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs"],
+  "exclude": ["**/node_modules", "**/dist", "**/build", "**/.next"]
+}
