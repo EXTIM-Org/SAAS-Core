@@ -26,7 +26,7 @@ export class UsersService {
     });
   }
 
-  async getPasswordHash(email: string): Promise<string | undefined> {
+  getPasswordHash(email: string): string | undefined {
     return this.passwordHashes.get(email);
   }
 
