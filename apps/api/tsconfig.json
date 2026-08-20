@@ -1,1 +1,11 @@
-{"extends": "../../tsconfig.json", "compilerOptions": {"outDir": "./dist", "baseUrl": "./", "paths": { "@saas/database": ["../../packages/database/src"] }}}
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@saas/database": ["../../packages/database/src"],
+      "@saas/shared": ["../../packages/shared/src"]
+    }
+  }
+}
