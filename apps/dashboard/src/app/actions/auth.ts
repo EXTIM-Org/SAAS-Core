@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:4000";
 
 export async function loginAction(data: { email: string; password: string }) {
   const response = await fetch(`${API_URL}/auth/login`, {
@@ -19,8 +19,9 @@ export async function loginAction(data: { email: string; password: string }) {
   }
 
   const result = await response.json();
-  if (result.access_token) {
-    (await cookies()).set("token", result.access_token, {
+  const token = result.accessToken || result.access_token;
+  if (token) {
+    (await cookies()).set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 7 * 24 * 60 * 60, // 7 days
@@ -45,8 +46,9 @@ export async function signupAction(data: { email: string; password: string }) {
   }
 
   const result = await response.json();
-  if (result.access_token) {
-    (await cookies()).set("token", result.access_token, {
+  const token = result.accessToken || result.access_token;
+  if (token) {
+    (await cookies()).set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 7 * 24 * 60 * 60, // 7 days
