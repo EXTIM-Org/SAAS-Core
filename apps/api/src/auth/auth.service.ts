@@ -14,8 +14,10 @@ export class AuthService {
   async signup(authCredentialsDto: AuthCredentialsDto) {
     const user = await this.usersService.createUser(authCredentialsDto);
     const payload = { sub: user.id, email: user.email };
+    const token = this.jwtService.sign(payload);
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: token,
+      access_token: token,
     };
   }
 
@@ -39,8 +41,10 @@ export class AuthService {
     }
 
     const payload = { sub: user.id, email: user.email };
+    const token = this.jwtService.sign(payload);
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: token,
+      access_token: token,
     };
   }
 }
