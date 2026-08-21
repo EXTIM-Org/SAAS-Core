@@ -1,14 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { getProject } from "@/app/actions/projects";
-import { getDomains, createDomainAction, deleteDomainAction } from "@/app/actions/domains";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { getProject } from '@/app/actions/projects';
+import {
+  getDomains,
+  createDomainAction,
+  deleteDomainAction,
+} from '@/app/actions/domains';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { ArrowLeft, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface Project {
   id: string;
@@ -27,9 +37,9 @@ export default function ProjectDetailsPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [domains, setDomains] = useState<Domain[]>([]);
-  const [newDomainName, setNewDomainName] = useState("");
-  const [error, setError] = useState("");
-  const [domainError, setDomainError] = useState("");
+  const [newDomainName, setNewDomainName] = useState('');
+  const [error, setError] = useState('');
+  const [domainError, setDomainError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -44,7 +54,7 @@ export default function ProjectDetailsPage() {
         setDomains(domainsData);
       } catch (e) {
         const err = e as Error;
-        setError(err.message || "Failed to fetch project details");
+        setError(err.message || 'Failed to fetch project details');
       } finally {
         setInitialLoading(false);
       }
@@ -56,21 +66,21 @@ export default function ProjectDetailsPage() {
     e.preventDefault();
     if (!newDomainName.trim()) return;
     setIsLoading(true);
-    setDomainError("");
+    setDomainError('');
 
     const res = await createDomainAction({ name: newDomainName, projectId });
     if (res.error) {
       setDomainError(res.error);
     } else {
       setDomains([...domains, res.data]);
-      setNewDomainName("");
+      setNewDomainName('');
     }
     setIsLoading(false);
   };
 
   const handleDeleteDomain = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this domain?")) return;
-    setDomainError("");
+    if (!confirm('Are you sure you want to delete this domain?')) return;
+    setDomainError('');
     const res = await deleteDomainAction(id);
     if (res.error) {
       setDomainError(res.error);
@@ -87,13 +97,16 @@ export default function ProjectDetailsPage() {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 mb-4">
-          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">
+          <Link
+            href="/dashboard"
+            className="text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <h1 className="text-2xl font-bold">Error</h1>
         </div>
-        <p className="text-destructive">{error || "Project not found"}</p>
-        <Button onClick={() => router.push("/dashboard")} variant="outline">
+        <p className="text-destructive">{error || 'Project not found'}</p>
+        <Button onClick={() => router.push('/dashboard')} variant="outline">
           Back to Dashboard
         </Button>
       </div>
@@ -104,7 +117,10 @@ export default function ProjectDetailsPage() {
     <div className="flex flex-col gap-8">
       <div>
         <div className="flex items-center gap-4 mb-2">
-          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">
+          <Link
+            href="/dashboard"
+            className="text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
@@ -117,7 +133,9 @@ export default function ProjectDetailsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Domains</CardTitle>
-          <CardDescription>Manage domains associated with {project.name}.</CardDescription>
+          <CardDescription>
+            Manage domains associated with {project.name}.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <form onSubmit={handleCreateDomain} className="flex gap-4">
@@ -130,10 +148,14 @@ export default function ProjectDetailsPage() {
               className="max-w-sm"
             />
             <Button type="submit" disabled={isLoading || !newDomainName.trim()}>
-              {isLoading ? "Adding..." : "Add Domain"}
+              {isLoading ? 'Adding...' : 'Add Domain'}
             </Button>
           </form>
-          {domainError && <p className="text-sm font-medium text-destructive">{domainError}</p>}
+          {domainError && (
+            <p className="text-sm font-medium text-destructive">
+              {domainError}
+            </p>
+          )}
 
           <div className="rounded-md border">
             {domains.length === 0 ? (
@@ -143,7 +165,10 @@ export default function ProjectDetailsPage() {
             ) : (
               <ul className="divide-y">
                 {domains.map((domain) => (
-                  <li key={domain.id} className="flex items-center justify-between p-4">
+                  <li
+                    key={domain.id}
+                    className="flex items-center justify-between p-4"
+                  >
                     <span className="font-medium">{domain.name}</span>
                     <Button
                       variant="ghost"

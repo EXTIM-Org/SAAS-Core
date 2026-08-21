@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
-import { LogOut, Home, Settings } from "lucide-react";
-import { logoutAction } from "@/app/actions/auth";
-import { Button } from "@/components/ui/button";
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { LogOut, Home, Settings } from 'lucide-react';
+import { logoutAction } from '@/app/actions/auth';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardLayout({
   children,
@@ -16,12 +16,12 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     await logoutAction();
-    router.push("/login");
+    router.push('/login');
   };
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   return (
@@ -29,7 +29,10 @@ export default function DashboardLayout({
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2 font-bold">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 font-bold"
+            >
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 S
               </div>
@@ -37,7 +40,12 @@ export default function DashboardLayout({
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2"
+            >
               <LogOut className="h-4 w-4" />
               <span>Log out</span>
             </Button>
@@ -57,8 +65,8 @@ export default function DashboardLayout({
                     href={item.href}
                     className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
                     <item.icon className="h-4 w-4" />

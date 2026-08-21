@@ -12,7 +12,10 @@ export class AuthController {
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully created.' })
-  @ApiResponse({ status: 400, description: 'Bad Request (e.g. invalid data, user exists).' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (e.g. invalid data, user exists).',
+  })
   async signup(@Body() authCredentialsDto: AuthCredentialsDto) {
     return this.authService.signup(authCredentialsDto);
   }
@@ -31,7 +34,9 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async login(@Body() authCredentialsDto: AuthCredentialsDto): Promise<LoginResponse> {
+  async login(
+    @Body() authCredentialsDto: AuthCredentialsDto,
+  ): Promise<LoginResponse> {
     return this.authService.login(authCredentialsDto);
   }
 }

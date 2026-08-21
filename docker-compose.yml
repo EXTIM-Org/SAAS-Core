@@ -6,11 +6,11 @@ services:
       POSTGRES_PASSWORD: saas-local-password
       POSTGRES_DB: saas
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U saas"]
+      test: ['CMD-SHELL', 'pg_isready -U saas']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -18,11 +18,11 @@ services:
   redis:
     image: redis:8.8.1-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -33,11 +33,11 @@ services:
       TYPESENSE_DATA_DIR: /data
       TYPESENSE_API_KEY: dev-typesense-admin-key-change-me
     ports:
-      - "8108:8108"
+      - '8108:8108'
     volumes:
       - typesense_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8108/health || exit 1"]
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8108/health || exit 1']
       interval: 5s
       timeout: 5s
       retries: 5

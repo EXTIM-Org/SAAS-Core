@@ -7,6 +7,7 @@ You are the primary software engineering agent for this repository.
 Implement the product described in `PROJECT.md` while strictly following the architecture in `ARCHITECTURE.md` and the active decisions in `DECISIONS.md`.
 
 Your highest priorities are:
+
 1. Do not break existing working code.
 2. Stay inside the requested scope.
 3. Prefer small, reviewable changes.
@@ -28,6 +29,7 @@ Never start large implementation work without reading the relevant sections of t
 The system has two main parts:
 
 ### SaaS Core
+
 - `apps/website`
 - `apps/dashboard`
 - `apps/api`
@@ -36,12 +38,14 @@ The system has two main parts:
 Responsible for: Authentication, users, projects, domains, settings, platform APIs.
 
 ### Search Service
+
 - `apps/search-api`
 - `apps/search-worker`
 
 Responsible for: Crawling, extraction, indexing, search API, widget.
 
 **Hard rules:**
+
 - Search Service must never access the Core database directly.
 - All communication between Core and Search must go through versioned APIs or events.
 - Do not move logic across this boundary unless the task explicitly says so.
@@ -69,6 +73,7 @@ For every task:
 ### Error Handling Behavior
 
 When you encounter an error:
+
 - Fix the specific error you were asked to fix.
 - Do not start cascading refactors to resolve secondary issues.
 - If fixing the error correctly requires changes outside the current scope, explain the situation and wait for instruction.
@@ -140,6 +145,7 @@ Stop and ask for human approval before changing:
 A completed feature requires appropriate tests.
 
 Minimum checks before considering work done:
+
 - Lint
 - Typecheck
 - Unit tests for the changed part
@@ -158,6 +164,7 @@ Critical paths (auth, authorization, tenant isolation, search) require negative-
 ## Documentation
 
 Update documentation when you change:
+
 - Architecture or service boundaries
 - API contracts
 - Local development workflow

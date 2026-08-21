@@ -8,18 +8,18 @@ For JavaScript runtimes, prefer LTS when it is compatible with the required ecos
 
 As of the current project baseline, the following versions are selected:
 
-| Component       | Version     | Policy                                      |
-|-----------------|------------:|---------------------------------------------|
-| Node.js         | 24.18.0 LTS | Use LTS for production stability            |
-| Next.js         | 16.2.11     | Active LTS release selected for production  |
-| React           | 19.x        | Compatible with Next.js 16                  |
-| NestJS          | 11.1.28     | Current stable Nest 11 line                 |
-| Prisma          | 7.9.1       | Current stable release                      |
-| pnpm            | 11.17.0     | Current stable package manager              |
-| PostgreSQL      | 18.4        | Current stable major                        |
-| Redis           | 8.8.1       | Current stable major                        |
-| Typesense       | 30.2        | Latest stable Typesense release             |
-| Docker Compose  | Compose Spec| Current recommended Compose format          |
+| Component      |      Version | Policy                                     |
+| -------------- | -----------: | ------------------------------------------ |
+| Node.js        |  24.18.0 LTS | Use LTS for production stability           |
+| Next.js        |      16.2.11 | Active LTS release selected for production |
+| React          |         19.x | Compatible with Next.js 16                 |
+| NestJS         |      11.1.28 | Current stable Nest 11 line                |
+| Prisma         |        7.9.1 | Current stable release                     |
+| pnpm           |      11.17.0 | Current stable package manager             |
+| PostgreSQL     |         18.4 | Current stable major                       |
+| Redis          |        8.8.1 | Current stable major                       |
+| Typesense      |         30.2 | Latest stable Typesense release            |
+| Docker Compose | Compose Spec | Current recommended Compose format         |
 
 ## Why Node 24 Instead of Node 26
 
