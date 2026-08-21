@@ -1,13 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { HttpModule } from '@nestjs/axios';
 import { AppController } from './app.controller';
+import { TypesenseSchemaService } from './typesense-schema.service';
+import { CoreApiClientService } from './core-api-client.service';
+import { SearchController } from './search.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    HttpModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -21,8 +26,10 @@ import { AppController } from './app.controller';
       name: 'default',
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, SearchController],
   providers: [
+    TypesenseSchemaService,
+    CoreApiClientService,
     {
       provide: 'TYPESENSE_CLIENT',
       useFactory: async (configService: ConfigService) => {
