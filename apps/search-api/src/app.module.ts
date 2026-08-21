@@ -28,6 +28,9 @@ import { SearchController } from './search.controller';
     BullModule.registerQueue({
       name: 'default',
     }),
+    BullModule.registerQueue({
+      name: 'crawl-queue',
+    }),
   ],
   controllers: [AppController, SearchController],
   providers: [

@@ -37,6 +37,12 @@ describe('SearchController', () => {
           provide: 'TYPESENSE_CLIENT',
           useValue: typesenseClientMock,
         },
+        {
+          provide: 'BullQueue_crawl-queue',
+          useValue: {
+            add: jest.fn().mockResolvedValue({}),
+          },
+        },
       ],
     }).compile();
 

@@ -39,3 +39,34 @@ export async function searchProjectAction(projectId: string, query: string) {
     return { error: err.message || 'An error occurred during search' };
   }
 }
+
+export async function crawlUrlAction(
+  projectId: string,
+  url: string,
+  domain: string
+) {
+  if (!url.trim() || !domain.trim()) {
+    return { error: 'URL and domain are required' };
+  }
+
+  const apiUrl = new URL(`${SEARCH_API_URL}/search/crawl/${projectId}`);
+
+  try {
+    const response = await fetch(apiUrl.toString(), {
+      method: 'POST',
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ url, domain }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.message || 'Failed to submit URL for indexing' };
+    }
+
+    const data = await response.json();
+    return { success: true, message: data.message };
+  } catch (error) {
+    const err = error as Error;
+    return { error: err.message || 'An error occurred during submission' };
+  }
+}

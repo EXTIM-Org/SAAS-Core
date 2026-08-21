@@ -8,10 +8,11 @@ import {
   createDomainAction,
   deleteDomainAction,
 } from '@/app/actions/domains';
-import { searchProjectAction } from '@/app/actions/search';
+import { searchProjectAction, crawlUrlAction } from '@/app/actions/search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SearchResult } from '@saas/shared';
+import { toast } from 'sonner';
 import {
   Card,
   CardContent,
@@ -44,6 +45,9 @@ export default function ProjectDetailsPage() {
   const [domainError, setDomainError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const [crawlUrl, setCrawlUrl] = useState('');
+  const [isCrawling, setIsCrawling] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -93,6 +97,45 @@ export default function ProjectDetailsPage() {
       setDomainError(res.error);
     } else {
       setDomains(domains.filter((d) => d.id !== id));
+    }
+  };
+
+  const handleCrawlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!crawlUrl.trim()) return;
+
+    try {
+      new URL(crawlUrl);
+    } catch {
+      toast.error('Please enter a valid URL (e.g. https://example.com/page)');
+      return;
+    }
+
+    setIsCrawling(true);
+
+    try {
+      const urlObj = new URL(crawlUrl);
+      const domain = urlObj.hostname;
+
+      // Basic check if the domain belongs to this project
+      const hasDomain = domains.some((d) => d.name === domain);
+      if (!hasDomain && domains.length > 0) {
+        toast.error('The URL domain must match one of your configured domains.');
+        setIsCrawling(false);
+        return;
+      }
+
+      const res = await crawlUrlAction(projectId, crawlUrl, domain);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        toast.success(res.message || 'URL successfully submitted for indexing.');
+        setCrawlUrl('');
+      }
+    } catch {
+      toast.error('An unexpected error occurred.');
+    } finally {
+      setIsCrawling(false);
     }
   };
 
@@ -207,6 +250,31 @@ export default function ProjectDetailsPage() {
               </ul>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Link to Index</CardTitle>
+          <CardDescription>
+            Submit a specific URL to be crawled and indexed immediately.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          <form onSubmit={handleCrawlSubmit} className="flex gap-4">
+            <Input
+              type="url"
+              placeholder="https://example.com/article"
+              value={crawlUrl}
+              onChange={(e) => setCrawlUrl(e.target.value)}
+              disabled={isCrawling}
+              className="max-w-sm"
+              required
+            />
+            <Button type="submit" disabled={isCrawling || !crawlUrl.trim()}>
+              {isCrawling ? 'Submitting...' : 'Index URL'}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 
