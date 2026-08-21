@@ -18,7 +18,7 @@ export class AppController {
   @Get('health')
   async getHealth() {
     let typesenseStatus: Record<string, unknown> | { ok: boolean };
-    let redisStatus: Record<string, unknown> | { ok: boolean };
+    let redisStatus: Record<string, unknown> | { ok: boolean } = { ok: false };
 
     try {
       typesenseStatus = await this.typesenseClient.health.retrieve();
