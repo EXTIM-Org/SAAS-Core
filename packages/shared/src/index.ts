@@ -6,3 +6,11 @@ export interface LoginResponse {
 export interface UserPayload {
   userId: string;
 }
+
+export interface SearchResult {
+  id?: string;
+  title?: string;
+  url: string;
+  content?: string;
+  snippet?: string;
+}
