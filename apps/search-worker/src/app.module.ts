@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { HttpModule } from '@nestjs/axios';
 import { AppController } from './app.controller';
 import { CrawlProcessor } from './crawl.processor';
 
@@ -31,6 +32,7 @@ import { CrawlProcessor } from './crawl.processor';
         },
       },
     }),
+    HttpModule,
   ],
   controllers: [AppController],
   providers: [
