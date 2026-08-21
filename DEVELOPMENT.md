@@ -62,6 +62,7 @@ docker compose logs -f
 ```
 
 Canonical local infrastructure:
+
 - PostgreSQL
 - Redis
 - Typesense
@@ -69,6 +70,7 @@ Canonical local infrastructure:
 ## 5. Local Endpoints
 
 **Host access:**
+
 ```text
 PostgreSQL:  127.0.0.1:5432
 Redis:       127.0.0.1:6379
@@ -76,6 +78,7 @@ Typesense:   http://127.0.0.1:8108
 ```
 
 **Container-to-container access:**
+
 ```text
 postgres:5432
 redis:6379
@@ -89,6 +92,7 @@ Never use `localhost` for container-to-container communication.
 Values in `.env.example` are aligned with the Compose configuration.
 
 Local database credentials:
+
 ```text
 user:     saas
 database: saas
@@ -96,31 +100,37 @@ password: saas-local-password
 ```
 
 Host-run connection string:
+
 ```text
 postgresql://saas:saas-local-password@127.0.0.1:5432/saas?schema=public
 ```
 
 Container-internal connection string:
+
 ```text
 postgresql://saas:saas-local-password@postgres:5432/saas?schema=public
 ```
 
 Redis (host):
+
 ```text
 redis://127.0.0.1:6379
 ```
 
 Redis (container):
+
 ```text
 redis://redis:6379
 ```
 
 Typesense (host):
+
 ```text
 http://127.0.0.1:8108
 ```
 
 Typesense (container):
+
 ```text
 http://typesense:8108
 ```
@@ -180,13 +190,13 @@ Final supported commands must match the actual `package.json` scripts.
 
 ## 10. Which App Belongs Where
 
-| App              | Service       | Purpose                              |
-|------------------|---------------|--------------------------------------|
-| `website`        | SaaS Core     | Public marketing + documentation     |
-| `dashboard`      | SaaS Core     | Authenticated customer UI            |
-| `api`            | SaaS Core     | Auth, projects, domains, platform API|
-| `search-api`     | Search        | Search endpoints + widget support    |
-| `search-worker`  | Search        | Crawling, extraction, indexing       |
+| App             | Service   | Purpose                               |
+| --------------- | --------- | ------------------------------------- |
+| `website`       | SaaS Core | Public marketing + documentation      |
+| `dashboard`     | SaaS Core | Authenticated customer UI             |
+| `api`           | SaaS Core | Auth, projects, domains, platform API |
+| `search-api`    | Search    | Search endpoints + widget support     |
+| `search-worker` | Search    | Crawling, extraction, indexing        |
 
 ## 11. Validation Before PR
 
@@ -218,10 +228,12 @@ Warning: `-v` deletes local PostgreSQL, Redis and Typesense data.
 ## 13. Troubleshooting
 
 ### Port already in use
-Default ports: `5432`, `6379`, `8108`.  
+
+Default ports: `5432`, `6379`, `8108`.
 Stop the conflicting process or change the host mapping and update documentation.
 
 ### Service not healthy
+
 ```bash
 docker compose ps
 docker compose logs postgres
@@ -232,6 +244,7 @@ docker compose logs typesense
 Applications should wait for readiness, not only rely on startup order.
 
 ### Search index problems
+
 Typesense is derived state. Once implemented, the Search Service must provide a rebuild/reconciliation path.
 
 ## 14. Development Rules
@@ -243,4 +256,7 @@ Typesense is derived state. Once implemented, the Search Service must provide a 
 - Core and Search must be startable independently
 - Any change to setup must update this document
 - The fresh-clone workflow is a hard requirement
+
+```
+
 ```

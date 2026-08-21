@@ -17,7 +17,10 @@ import { SearchController } from './search.controller';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         connection: {
-          url: configService.get<string>('REDIS_URL_DOCKER') || configService.get<string>('REDIS_URL') || 'redis://localhost:6379',
+          url:
+            configService.get<string>('REDIS_URL_DOCKER') ||
+            configService.get<string>('REDIS_URL') ||
+            'redis://localhost:6379',
         },
       }),
       inject: [ConfigService],
@@ -34,8 +37,13 @@ import { SearchController } from './search.controller';
       provide: 'TYPESENSE_CLIENT',
       useFactory: async (configService: ConfigService) => {
         const { Client } = await import('typesense');
-        const url = configService.get<string>('TYPESENSE_URL_DOCKER') || configService.get<string>('TYPESENSE_URL') || 'http://localhost:8108';
-        const apiKey = configService.get<string>('TYPESENSE_API_KEY') || 'typesense-local-key';
+        const url =
+          configService.get<string>('TYPESENSE_URL_DOCKER') ||
+          configService.get<string>('TYPESENSE_URL') ||
+          'http://localhost:8108';
+        const apiKey =
+          configService.get<string>('TYPESENSE_API_KEY') ||
+          'typesense-local-key';
 
         const urlObj = new URL(url);
 
@@ -43,7 +51,9 @@ import { SearchController } from './search.controller';
           nodes: [
             {
               host: urlObj.hostname,
-              port: parseInt(urlObj.port) || (urlObj.protocol === 'https:' ? 443 : 80),
+              port:
+                parseInt(urlObj.port) ||
+                (urlObj.protocol === 'https:' ? 443 : 80),
               protocol: urlObj.protocol.replace(':', ''),
             },
           ],

@@ -23,20 +23,27 @@ export class AppController {
     try {
       typesenseStatus = await this.typesenseClient.health.retrieve();
     } catch (error) {
-      typesenseStatus = { error: error instanceof Error ? error.message : 'Unknown error' };
+      typesenseStatus = {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
 
     try {
       const redisClient = await this.queue.defaultJobOptions;
-      if(redisClient) {
+      if (redisClient) {
         redisStatus = { ok: true };
       }
     } catch (error) {
-      redisStatus = { error: error instanceof Error ? error.message : 'Unknown error' };
+      redisStatus = {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
 
     return {
-      status: (!('error' in typesenseStatus) && !('error' in redisStatus)) ? 'ok' : 'error',
+      status:
+        !('error' in typesenseStatus) && !('error' in redisStatus)
+          ? 'ok'
+          : 'error',
       typesense: typesenseStatus,
       redis: redisStatus,
     };

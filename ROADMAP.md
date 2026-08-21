@@ -14,6 +14,7 @@ The first product service is **Search**.
 **Goal:** Create a clean, reproducible engineering foundation.
 
 **Tasks:**
+
 - Monorepo workspace
 - Package manager (pnpm)
 - TypeScript strict mode
@@ -31,6 +32,7 @@ The first product service is **Search**.
 - Health & readiness endpoints
 
 **Exit criteria:**
+
 - Fresh clone works with `docker compose up -d`
 - Infrastructure becomes healthy
 - Basic apps can start
@@ -44,6 +46,7 @@ The first product service is **Search**.
 **Goal:** Deliver a complete and stable shared platform that future products will connect to.
 
 **Tasks:**
+
 - Authentication (sign up, login, logout, session/JWT)
 - User management
 - Tenant / project model
@@ -58,6 +61,7 @@ The first product service is **Search**.
 - End-to-end tests for auth and tenant isolation
 
 **Exit criteria:**
+
 - A user can register and log in
 - A user can create and manage projects and domains
 - Tenant isolation is enforced and tested
@@ -74,6 +78,7 @@ The first product service is **Search**.
 **Goal:** Add the first independent product service on top of the stable SaaS Core.
 
 **Tasks:**
+
 - `search-api` and `search-worker` applications
 - Integration with Core (project/domain validation via API)
 - Sitemap ingestion
@@ -93,6 +98,7 @@ The first product service is **Search**.
 - Index rebuild capability
 
 **Exit criteria:**
+
 - A real website can be crawled and indexed
 - Search works with typo tolerance, autocomplete and filters
 - Widget is easy to install
@@ -106,6 +112,7 @@ The first product service is **Search**.
 ## Phase 3 — Monetization & Platform Hardening
 
 **Tasks:**
+
 - Billing integration
 - Plans and entitlements
 - Usage limits and enforcement
@@ -119,6 +126,7 @@ The first product service is **Search**.
 ## Phase 4 — Production Operations
 
 **Tasks:**
+
 - Error tracking (Sentry or equivalent)
 - Metrics and dashboards
 - Product analytics
@@ -133,12 +141,14 @@ The first product service is **Search**.
 ## Future Product Services
 
 Only start new product services after:
+
 1. SaaS Core is stable
 2. Search Service is in real use
 
 Each new product becomes its own coarse-grained service that integrates with the Core.
 
 Planned products:
+
 - Form Backend
 - AI Chat
 - SEO Platform

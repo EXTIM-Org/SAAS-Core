@@ -12,8 +12,12 @@ export class CoreApiClientService {
     private readonly configService: ConfigService,
   ) {}
 
-  async validateProject(projectId: string, authHeader?: string): Promise<boolean> {
-    const apiUrl = this.configService.get<string>('API_URL') || 'http://localhost:4000';
+  async validateProject(
+    projectId: string,
+    authHeader?: string,
+  ): Promise<boolean> {
+    const apiUrl =
+      this.configService.get<string>('API_URL') || 'http://localhost:4000';
 
     try {
       const headers: Record<string, string> = {};
@@ -22,12 +26,16 @@ export class CoreApiClientService {
       }
 
       await lastValueFrom(
-        this.httpService.get(`${apiUrl}/projects/${projectId}`, { headers }).pipe(
-          catchError((err: Error) => {
-            this.logger.error(`Failed to validate project ${projectId}: ${err.message}`);
-            throw err;
-          }),
-        ),
+        this.httpService
+          .get(`${apiUrl}/projects/${projectId}`, { headers })
+          .pipe(
+            catchError((err: Error) => {
+              this.logger.error(
+                `Failed to validate project ${projectId}: ${err.message}`,
+              );
+              throw err;
+            }),
+          ),
       );
 
       return true;

@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Query, Headers, NotFoundException, Inject } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Headers,
+  NotFoundException,
+  Inject,
+} from '@nestjs/common';
 import { CoreApiClientService } from './core-api-client.service';
 import { Client } from 'typesense';
 
@@ -15,10 +23,15 @@ export class SearchController {
     @Query('q') q: string,
     @Headers('authorization') authorization?: string,
   ) {
-    const isValid = await this.coreApiClientService.validateProject(projectId, authorization);
+    const isValid = await this.coreApiClientService.validateProject(
+      projectId,
+      authorization,
+    );
 
     if (!isValid) {
-      throw new NotFoundException(`Project with ID ${projectId} not found or unauthorized`);
+      throw new NotFoundException(
+        `Project with ID ${projectId} not found or unauthorized`,
+      );
     }
 
     if (!q) {

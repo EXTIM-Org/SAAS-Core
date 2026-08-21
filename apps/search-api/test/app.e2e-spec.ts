@@ -33,14 +33,14 @@ describe('AppController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
-    .overrideProvider('TYPESENSE_CLIENT')
-    .useValue({
+      .overrideProvider('TYPESENSE_CLIENT')
+      .useValue({
         health: { retrieve: jest.fn().mockResolvedValue({ ok: true }) },
         collections: jest.fn().mockReturnValue({
-            retrieve: jest.fn().mockResolvedValue({}),
-        })
-    })
-    .compile();
+          retrieve: jest.fn().mockResolvedValue({}),
+        }),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -51,7 +51,8 @@ describe('AppController (e2e)', () => {
   });
 
   it('/ (GET)', () => {
-    return request.default(app.getHttpServer())
+    return request
+      .default(app.getHttpServer())
       .get('/')
       .expect(200)
       .expect('Hello World!');

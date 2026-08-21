@@ -1,11 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { getProjects, createProjectAction } from "@/app/actions/projects";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { getProjects, createProjectAction } from '@/app/actions/projects';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 
 interface Project {
   id: string;
@@ -16,8 +22,8 @@ interface Project {
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [error, setError] = useState("");
+  const [newProjectName, setNewProjectName] = useState('');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -28,7 +34,7 @@ export default function DashboardPage() {
         setProjects(data);
       } catch (e) {
         const err = e as Error;
-        setError(err.message || "Failed to fetch projects");
+        setError(err.message || 'Failed to fetch projects');
       } finally {
         setInitialLoading(false);
       }
@@ -40,14 +46,14 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!newProjectName.trim()) return;
     setIsLoading(true);
-    setError("");
+    setError('');
 
     const res = await createProjectAction({ name: newProjectName });
     if (res.error) {
       setError(res.error);
     } else {
       setProjects([...projects, res.data]);
-      setNewProjectName("");
+      setNewProjectName('');
     }
     setIsLoading(false);
   };
@@ -56,15 +62,15 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-        <p className="text-muted-foreground">
-          Manage your projects.
-        </p>
+        <p className="text-muted-foreground">Manage your projects.</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Create New Project</CardTitle>
-          <CardDescription>Add a new project to your workspace.</CardDescription>
+          <CardDescription>
+            Add a new project to your workspace.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreateProject} className="flex gap-4">
@@ -76,11 +82,16 @@ export default function DashboardPage() {
               disabled={isLoading}
               className="max-w-sm"
             />
-            <Button type="submit" disabled={isLoading || !newProjectName.trim()}>
-              {isLoading ? "Creating..." : "Create"}
+            <Button
+              type="submit"
+              disabled={isLoading || !newProjectName.trim()}
+            >
+              {isLoading ? 'Creating...' : 'Create'}
             </Button>
           </form>
-          {error && <p className="text-sm font-medium text-destructive mt-2">{error}</p>}
+          {error && (
+            <p className="text-sm font-medium text-destructive mt-2">{error}</p>
+          )}
         </CardContent>
       </Card>
 

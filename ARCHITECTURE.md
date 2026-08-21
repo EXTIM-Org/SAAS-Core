@@ -5,6 +5,7 @@
 Build a production-ready, reusable SaaS platform that can host multiple products.
 
 The architecture uses **coarse-grained services**:
+
 - A unified **SaaS Core** for shared platform capabilities
 - Independent **Product Services** for each product (starting with Search)
 
@@ -62,16 +63,19 @@ packages/
 ### SaaS Core
 
 **Website**
+
 - Marketing pages
 - Documentation
 - SEO
 
 **Dashboard**
+
 - Authenticated customer experience
 - Project and domain management
 - Usage and configuration views
 
 **Core API**
+
 - Authentication and session handling
 - User management
 - Tenant / project model
@@ -83,12 +87,14 @@ packages/
 ### Search Service
 
 **Search API**
+
 - Search endpoints
 - Autocomplete
 - Public/project-scoped search access
 - Widget configuration endpoints
 
 **Search Worker**
+
 - Sitemap fetching
 - Controlled crawling
 - Content extraction and normalization
@@ -99,7 +105,9 @@ packages/
 ## 5. Data Architecture
 
 ### PostgreSQL
+
 Authoritative source of truth for:
+
 - Users
 - Projects / tenants
 - Domains
@@ -109,15 +117,18 @@ Authoritative source of truth for:
 Search Service may own its own tables for crawl state and document content, but project/domain ownership always lives in the Core.
 
 ### Typesense
+
 Derived search index. Must be fully rebuildable.
 
 ### Redis
+
 - BullMQ queues
 - Rate limiting
 - Transient coordination
 - Justified caching
 
 ### Object Storage
+
 S3-compatible storage for durable blobs when required. Metadata remains in PostgreSQL.
 
 ## 6. Multi-Tenancy & Authorization
@@ -163,6 +174,7 @@ Customer Website
 ## 9. Crawler Safety
 
 Before production use, the crawler must implement:
+
 - URL scheme validation
 - Crawl-scope enforcement
 - SSRF protection
@@ -209,6 +221,7 @@ Do not use floating `latest` tags for critical components.
 ## 14. Architecture Evolution
 
 Significant structural changes require:
+
 1. Documenting the problem
 2. Comparing realistic options
 3. Recording the decision in `DECISIONS.md`

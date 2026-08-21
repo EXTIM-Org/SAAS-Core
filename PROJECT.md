@@ -48,12 +48,14 @@ This shape keeps authentication and tenancy simple, isolates heavy workloads, an
 ## 5. First Product — Site Search as a Service
 
 **Target customers:**
+
 - Online stores
 - Content websites
 - Technical documentation
 - Directories and listing sites
 
 **Core customer value:**
+
 - Fast search
 - Typo tolerance
 - Instant suggestions / autocomplete
@@ -64,6 +66,7 @@ This shape keeps authentication and tenancy simple, isolates heavy workloads, an
 ## 6. MVP Scope
 
 ### Search Product
+
 - Sitemap ingestion
 - Controlled web crawling
 - Content extraction and normalization
@@ -77,6 +80,7 @@ This shape keeps authentication and tenancy simple, isolates heavy workloads, an
 - Embeddable widget
 
 ### SaaS Core
+
 - Authentication
 - Users
 - Tenant / project isolation
@@ -86,6 +90,7 @@ This shape keeps authentication and tenancy simple, isolates heavy workloads, an
 - Usage foundation where required
 
 ### Explicitly Deferred
+
 Do not add these unless a concrete MVP need or approved architectural reason appears:
 
 - AI search
@@ -131,6 +136,7 @@ packages/
 ## 8. Technology Stack
 
 **Frontend**
+
 - Next.js App Router
 - React
 - TypeScript
@@ -138,9 +144,11 @@ packages/
 - shadcn/ui
 
 **Backend**
+
 - NestJS + Fastify
 
 **Data & Search**
+
 - PostgreSQL
 - Prisma
 - Redis
@@ -148,6 +156,7 @@ packages/
 - Typesense
 
 **Infrastructure**
+
 - Docker
 - Docker Compose (local infrastructure)
 - GitHub Actions

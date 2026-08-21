@@ -11,12 +11,20 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js', '*.mjs', '*.cjs', 'apps/*/*.mjs', 'apps/*/*.js', 'packages/*/*.mjs', 'apps/*/.next/types/*.ts'],
+          allowDefaultProject: [
+            '*.js',
+            '*.mjs',
+            '*.cjs',
+            'apps/*/*.mjs',
+            'apps/*/*.js',
+            'packages/*/*.mjs',
+            'apps/*/.next/types/*.ts',
+          ],
           defaultProject: 'tsconfig.eslint.json',
           maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 20,
         },
         tsconfigRootDir: import.meta.dirname,
       },
     },
-  }
+  },
 );

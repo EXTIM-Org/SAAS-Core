@@ -98,6 +98,7 @@ Only active decisions are kept here. Superseded decisions are removed to keep th
 **Why:** A fresh clone must work without manually installing databases or search engines on the host.
 
 **Rules:**
+
 - Named volumes for persistent data
 - Healthchecks for all infrastructure services
 - Service-to-service communication uses Compose DNS names
@@ -121,6 +122,7 @@ Only active decisions are kept here. Superseded decisions are removed to keep th
 **Decision:** Use the latest stable, production-appropriate versions. Prefer LTS runtimes when available.
 
 **Rules:**
+
 - Do not use pre-release, alpha, or beta versions for production dependencies
 - Do not blindly upgrade major versions
 - Record important versions in `STACK_VERSIONS.md`
@@ -139,7 +141,9 @@ Working primarily with AI coding agents showed that a large shared codebase ofte
 The system is split into coarse-grained services:
 
 ### 1. SaaS Core (unified platform)
+
 Contains:
+
 - Authentication and user management
 - Tenant / project model
 - Domain and project configuration
@@ -149,12 +153,15 @@ Contains:
 - Core platform APIs
 
 Runtime applications:
+
 - `apps/website` (Next.js)
 - `apps/dashboard` (Next.js)
 - `apps/api` (NestJS)
 
 ### 2. Search Service (first product)
+
 Contains:
+
 - Sitemap ingestion
 - Crawling and content extraction
 - Normalization
@@ -164,19 +171,23 @@ Contains:
 - Background workers
 
 Runtime applications:
+
 - `apps/search-api`
 - `apps/search-worker`
 
 ### 3. Future products
+
 Each new product (Form Backend, AI Chat, SEO Platform, etc.) will be added as its own coarse-grained service that integrates with the SaaS Core.
 
 **Communication rules:**
+
 - Product services must never access the Core database directly.
 - All communication happens through versioned APIs or asynchronous events.
 - The SaaS Core remains the single source of truth for users, projects, domains, and entitlements.
 - Authorization and tenant isolation are enforced by the Core.
 
 **Why this shape:**
+
 - Keeps authentication and tenancy simple and consistent
 - Isolates the heaviest workload (crawling & indexing)
 - Gives AI agents a much smaller and clearer context when working on Search
@@ -184,6 +195,7 @@ Each new product (Form Backend, AI Chat, SEO Platform, etc.) will be added as it
 - Avoids the high operational cost of fine-grained microservices
 
 **Consequences:**
+
 - Search and future products are independently deployable and testable
 - Local development and CI must support starting Core and product services separately
 - Explicit API contracts between Core and product services are required
