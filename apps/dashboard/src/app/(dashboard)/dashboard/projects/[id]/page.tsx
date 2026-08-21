@@ -8,8 +8,10 @@ import {
   createDomainAction,
   deleteDomainAction,
 } from '@/app/actions/domains';
+import { searchProjectAction } from '@/app/actions/search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SearchResult } from '@saas/shared';
 import {
   Card,
   CardContent,
@@ -42,6 +44,11 @@ export default function ProjectDetailsPage() {
   const [domainError, setDomainError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -87,6 +94,22 @@ export default function ProjectDetailsPage() {
     } else {
       setDomains(domains.filter((d) => d.id !== id));
     }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchError('');
+    setSearchResults([]);
+
+    const res = await searchProjectAction(projectId, searchQuery);
+    if (res.error) {
+      setSearchError(res.error);
+    } else if (res.success) {
+      setSearchResults(res.data || []);
+    }
+    setIsSearching(false);
   };
 
   if (initialLoading) {
@@ -179,6 +202,69 @@ export default function ProjectDetailsPage() {
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
                     </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Search Tester</CardTitle>
+          <CardDescription>
+            Test search functionality for your indexed documents.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          <form onSubmit={handleSearch} className="flex gap-4">
+            <Input
+              type="text"
+              placeholder="Search query..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isSearching}
+              className="max-w-sm"
+            />
+            <Button type="submit" disabled={isSearching || !searchQuery.trim()}>
+              {isSearching ? 'Searching...' : 'Search'}
+            </Button>
+          </form>
+          {searchError && (
+            <p className="text-sm font-medium text-destructive">
+              {searchError}
+            </p>
+          )}
+
+          <div className="rounded-md border">
+            {searchResults.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No search results.
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {searchResults.map((result, index) => (
+                  <li
+                    key={result.id || index}
+                    className="p-4 flex flex-col gap-1"
+                  >
+                    <a
+                      href={result.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary hover:underline"
+                    >
+                      {result.title || result.url}
+                    </a>
+                    <span className="text-xs text-muted-foreground break-all">
+                      {result.url}
+                    </span>
+                    <p className="text-sm mt-1 line-clamp-2">
+                      {result.content ||
+                        result.snippet ||
+                        'No content snippet available.'}
+                    </p>
                   </li>
                 ))}
               </ul>
