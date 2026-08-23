@@ -20,7 +20,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Package } from 'lucide-react';
 import Link from 'next/link';
 
 interface Project {
@@ -181,19 +181,27 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <div className="flex items-center gap-4 mb-2">
-          <Link
-            href="/dashboard"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-4 mb-2">
+            <Link
+              href="/dashboard"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
+          </div>
+          <p className="text-muted-foreground">
+            Manage details and domains for this project.
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          Manage details and domains for this project.
-        </p>
+        <Link href={`/dashboard/projects/${projectId}/products`}>
+          <Button className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Manage Products
+          </Button>
+        </Link>
       </div>
 
       <Card>
