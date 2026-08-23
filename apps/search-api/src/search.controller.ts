@@ -55,6 +55,38 @@ export class SearchController {
     return searchResults;
   }
 
+  @Post('ingest/product')
+  async ingestProduct(
+    @Body()
+    body: {
+      productId: string;
+      projectId: string;
+      name: string;
+      description?: string;
+      price?: number;
+    },
+    @Headers('authorization') authorization?: string,
+  ) {
+    if (!body.projectId || !body.productId || !body.name) {
+      throw new NotFoundException('Missing required fields');
+    }
+
+    const isValid = await this.coreApiClientService.validateProject(
+      body.projectId,
+      authorization,
+    );
+
+    if (!isValid) {
+      throw new NotFoundException(
+        `Project with ID ${body.projectId} not found or unauthorized`,
+      );
+    }
+
+    await this.crawlQueue.add('index-product', body);
+
+    return { success: true, message: 'Product added to index queue' };
+  }
+
   @Post('crawl/:projectId')
   async crawl(
     @Param('projectId') projectId: string,
