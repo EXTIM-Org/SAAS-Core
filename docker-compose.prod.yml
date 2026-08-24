@@ -1,0 +1,127 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-saas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-saas}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - saas-network
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - saas-network
+
+  typesense:
+    image: typesense/typesense:26.0
+    environment:
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+    volumes:
+      - typesense_prod_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8108/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - saas-network
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-postgresql://saas:saas-prod-password@postgres:5432/saas?schema=public}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - SMTP_HOST=${SMTP_HOST}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - saas-network
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - API_URL=http://api:4000
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - saas-network
+
+  search-api:
+    build:
+      context: .
+      dockerfile: apps/search-api/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
+      - TYPESENSE_NODES=[{"host":"typesense","port":"8108","protocol":"http"}]
+    ports:
+      - "4001:4001"
+    depends_on:
+      typesense:
+        condition: service_healthy
+    networks:
+      - saas-network
+
+  search-worker:
+    build:
+      context: .
+      dockerfile: apps/search-worker/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
+      - TYPESENSE_NODES=[{"host":"typesense","port":"8108","protocol":"http"}]
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CORE_API_URL=http://api:4000
+    depends_on:
+      redis:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - saas-network
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  typesense_prod_data:
+
+networks:
+  saas-network:
+    driver: bridge
