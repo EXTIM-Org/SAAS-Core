@@ -17,7 +17,9 @@ describe('AdminController', () => {
             project: { count: jest.fn().mockResolvedValue(5) },
             order: {
               count: jest.fn().mockResolvedValue(20),
-              aggregate: jest.fn().mockResolvedValue({ _sum: { totalAmount: 1500 } }),
+              aggregate: jest
+                .fn()
+                .mockResolvedValue({ _sum: { totalAmount: 1500 } }),
             },
           },
         },
@@ -44,11 +46,15 @@ describe('AdminController', () => {
       expect(prismaService.user.count).toHaveBeenCalled();
       expect(prismaService.project.count).toHaveBeenCalled();
       expect(prismaService.order.count).toHaveBeenCalled();
-      expect(prismaService.order.aggregate).toHaveBeenCalledWith({ _sum: { totalAmount: true } });
+      expect(prismaService.order.aggregate).toHaveBeenCalledWith({
+        _sum: { totalAmount: true },
+      });
     });
 
     it('should handle null revenue', async () => {
-      (prismaService.order.aggregate as jest.Mock).mockResolvedValueOnce({ _sum: { totalAmount: null } });
+      (prismaService.order.aggregate as jest.Mock).mockResolvedValueOnce({
+        _sum: { totalAmount: null },
+      });
       const stats = await controller.getStats();
       expect(stats.totalRevenue).toBe(0);
     });

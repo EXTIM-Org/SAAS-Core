@@ -103,7 +103,11 @@ export class CartService {
       include: { cart: true },
     });
 
-    if (!item || item.cart.userId !== userId || item.cart.projectId !== projectId) {
+    if (
+      !item ||
+      item.cart.userId !== userId ||
+      item.cart.projectId !== projectId
+    ) {
       throw new NotFoundException('Cart item not found');
     }
 
@@ -126,7 +130,11 @@ export class CartService {
       include: { cart: true },
     });
 
-    if (!item || item.cart.userId !== userId || item.cart.projectId !== projectId) {
+    if (
+      !item ||
+      item.cart.userId !== userId ||
+      item.cart.projectId !== projectId
+    ) {
       throw new NotFoundException('Cart item not found');
     }
 
