@@ -11,4 +11,5 @@ allowBuilds:
   msgpackr-extract: true
   prisma: true
   sharp: true
+  typesense-instantsearch-adapter: true
   unrs-resolver: true
