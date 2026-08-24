@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from '@/components/ui/sonner';
+import { PostHogProvider } from '@/providers/posthog-provider';
 
 export default function RootLayout({
   children,
@@ -30,8 +31,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster />
+        <PostHogProvider>
+          {children}
+          <Toaster />
+        </PostHogProvider>
       </body>
     </html>
   );

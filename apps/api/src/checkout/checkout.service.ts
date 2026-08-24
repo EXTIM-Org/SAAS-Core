@@ -78,7 +78,14 @@ export class CheckoutService {
     return order;
   }
 
-  private async sendInvoiceEmailSafely(userId: string, order: any, cartItems: any[]) {
+  private async sendInvoiceEmailSafely(
+    userId: string,
+    order: { id: string; totalAmount: number; createdAt: Date },
+    cartItems: {
+      product: { name: string; price: number };
+      quantity: number;
+    }[],
+  ) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
