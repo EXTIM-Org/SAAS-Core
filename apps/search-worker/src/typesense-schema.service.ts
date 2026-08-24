@@ -48,7 +48,7 @@ export class TypesenseSchemaService implements OnModuleInit {
           this.logger.log(`Typesense collection '${collection.name}' not found. Creating...`);
           await this.typesenseClient.collections().create({
             name: collection.name,
-            fields: collection.fields as Record<string, unknown>[],
+            fields: collection.fields as import("typesense/lib/Typesense/Collection").CollectionFieldSchema[],
           });
           this.logger.log(`Typesense collection '${collection.name}' created successfully.`);
         } else {
