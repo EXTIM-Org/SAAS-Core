@@ -60,8 +60,8 @@ export class EmailService {
 
   async sendOrderInvoiceEmail(
     userEmail: string,
-    order: any,
-    orderItems: any[],
+    order: { id: string; totalAmount: number; createdAt: Date },
+    orderItems: { name: string; quantity: number; price: number }[],
   ): Promise<void> {
     const from =
       this.configService.get<string>('SMTP_FROM') || 'noreply@example.com';
