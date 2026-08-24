@@ -8,8 +8,12 @@ import { firstValueFrom } from 'rxjs';
 
 export interface JobData {
   projectId: string;
-  domain: string;
-  url: string;
+  domain?: string;
+  url?: string;
+  productId?: string;
+  name?: string;
+  description?: string;
+  price?: number;
 }
 
 @Processor('crawl-queue')
@@ -24,9 +28,19 @@ export class CrawlProcessor extends WorkerHost {
   }
 
   async process(job: Job<JobData, void, string>): Promise<void> {
+    if (job.name === 'index-product') {
+      await this.processProduct(job);
+      return;
+    }
+
     this.logger.log(`Processing job ${job.id} for URL: ${job.data.url}`);
 
     const { projectId, domain, url } = job.data;
+
+    if (!url || !domain) {
+      this.logger.error(`Missing url or domain for crawl job ${job.id}`);
+      throw new Error('Missing url or domain');
+    }
 
     let title: string;
     let content: string;
@@ -85,6 +99,40 @@ export class CrawlProcessor extends WorkerHost {
         error instanceof Error ? error.stack : 'Unknown Error',
       );
       throw error; // Let BullMQ handle retry based on the backoff config
+    }
+  }
+
+  private async processProduct(job: Job<JobData, void, string>): Promise<void> {
+    this.logger.log(`Processing index-product job ${job.id} for Product: ${job.data.productId}`);
+
+    const { projectId, productId, name, description, price } = job.data;
+
+    if (!projectId || !productId || !name) {
+      this.logger.error(`Missing required fields for index-product job ${job.id}`);
+      throw new Error('Missing required fields for product');
+    }
+
+    const document = {
+      id: productId,
+      projectId,
+      name,
+      description,
+      price,
+    };
+
+    try {
+      await this.typesenseClient
+        .collections('products')
+        .documents()
+        .upsert(document);
+
+      this.logger.log(`Successfully indexed product: ${productId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to index product: ${productId}`,
+        error instanceof Error ? error.stack : 'Unknown Error',
+      );
+      throw error;
     }
   }
 }

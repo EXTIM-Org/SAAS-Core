@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { HttpModule } from '@nestjs/axios';
 import { AppController } from './app.controller';
 import { CrawlProcessor } from './crawl.processor';
+import { TypesenseSchemaService } from './typesense-schema.service';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CrawlProcessor } from './crawl.processor';
   controllers: [AppController],
   providers: [
     CrawlProcessor,
+    TypesenseSchemaService,
     {
       provide: 'TYPESENSE_CLIENT',
       useFactory: async (configService: ConfigService) => {

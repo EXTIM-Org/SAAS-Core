@@ -2,14 +2,53 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+import { Product } from '@saas/database';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ProductsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private async syncWithSearchService(product: Product) {
+    try {
+      const searchApiUrl =
+        this.configService.get<string>('SEARCH_API_URL') ||
+        'http://localhost:3002';
+
+      const payload = {
+        productId: product.id,
+        projectId: product.projectId,
+        name: product.name,
+        description: product.description,
+        price: product.price ? Number(product.price) : undefined,
+      };
+
+      await firstValueFrom(
+        this.httpService.post(`${searchApiUrl}/search/ingest/product`, payload, {
+          timeout: 5000,
+        })
+      );
+      this.logger.log(`Successfully queued product ${product.id} for indexing`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to sync product ${product.id} with search service`,
+        error instanceof Error ? error.stack : 'Unknown Error',
+      );
+    }
+  }
 
   async create(userId: string, createProductDto: CreateProductDto) {
     const { projectId, ...productData } = createProductDto;
@@ -27,12 +66,17 @@ export class ProductsService {
       throw new UnauthorizedException('You do not own this project');
     }
 
-    return this.prisma.product.create({
+    const product = await this.prisma.product.create({
       data: {
         ...productData,
         projectId,
       },
     });
+
+    // Fire and forget
+    this.syncWithSearchService(product).catch(() => {});
+
+    return product;
   }
 
   async findAll(userId: string, projectId: string) {
@@ -108,13 +152,18 @@ export class ProductsService {
       }
     }
 
-    return this.prisma.product.update({
+    const updatedProduct = await this.prisma.product.update({
       where: { id },
       data: {
         ...updateData,
         ...(projectId && { projectId }), // conditionally add projectId
       },
     });
+
+    // Fire and forget
+    this.syncWithSearchService(updatedProduct).catch(() => {});
+
+    return updatedProduct;
   }
 
   async remove(userId: string, id: string) {
