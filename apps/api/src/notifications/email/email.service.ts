@@ -57,4 +57,51 @@ export class EmailService {
       throw error;
     }
   }
+
+  async sendOrderInvoiceEmail(
+    userEmail: string,
+    order: any,
+    orderItems: any[],
+  ): Promise<void> {
+    const from =
+      this.configService.get<string>('SMTP_FROM') || 'noreply@example.com';
+    const subject = `Order Receipt - ${order.id}`;
+
+    const itemsHtml = orderItems
+      .map(
+        (item) =>
+          `<li>${item.name} (x${item.quantity}) - $${item.price.toFixed(2)}</li>`,
+      )
+      .join('');
+
+    const html = `
+      <h1>Thank you for your purchase</h1>
+      <p><strong>Order ID:</strong> ${order.id}</p>
+      <p><strong>Purchase Date:</strong> ${new Date(order.createdAt).toLocaleString()}</p>
+      <h2>Items:</h2>
+      <ul>${itemsHtml}</ul>
+      <p><strong>Total Amount:</strong> $${order.totalAmount.toFixed(2)}</p>
+    `;
+
+    if (!this.transporter) {
+      this.logger.log(
+        `[Mock Email] To: ${userEmail}, Subject: ${subject}, HTML: ${html}`,
+      );
+      return;
+    }
+
+    try {
+      await this.transporter.sendMail({
+        from,
+        to: userEmail,
+        subject,
+        html,
+      });
+      this.logger.log(`Invoice email sent to ${userEmail}`);
+    } catch (error) {
+      this.logger.error(`Failed to send invoice email to ${userEmail}`, error);
+      // We explicitly do not throw the error to ensure we don't crash or block
+      // the caller (e.g. checkout process) if email sending fails.
+    }
+  }
 }

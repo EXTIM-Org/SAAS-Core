@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CheckoutService } from './checkout.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../notifications/email/email.service';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -14,6 +15,13 @@ describe('CheckoutService', () => {
           useValue: {
             cart: { findUnique: jest.fn() },
             $transaction: jest.fn(),
+            user: { findUnique: jest.fn() },
+          },
+        },
+        {
+          provide: EmailService,
+          useValue: {
+            sendOrderInvoiceEmail: jest.fn(),
           },
         },
       ],

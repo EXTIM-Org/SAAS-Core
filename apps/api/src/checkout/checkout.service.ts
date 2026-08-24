@@ -1,11 +1,17 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProcessCheckoutDto } from './dto/process-checkout.dto';
 import { OrderStatus } from '@saas/database';
+import { EmailService } from '../notifications/email/email.service';
 
 @Injectable()
 export class CheckoutService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(CheckoutService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async processCheckout(userId: string, dto: ProcessCheckoutDto) {
     const { projectId } = dto;
@@ -66,6 +72,36 @@ export class CheckoutService {
       return createdOrder;
     });
 
+    // Fire and forget email sending
+    this.sendInvoiceEmailSafely(userId, order, cart.cartItems);
+
     return order;
+  }
+
+  private async sendInvoiceEmailSafely(userId: string, order: any, cartItems: any[]) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        this.logger.warn(`User not found for invoice email (userId: ${userId})`);
+        return;
+      }
+
+      const emailOrderItems = cartItems.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.product.price,
+      }));
+
+      await this.emailService.sendOrderInvoiceEmail(
+        user.email,
+        order,
+        emailOrderItems,
+      );
+    } catch (error) {
+      this.logger.error('Failed to send invoice email after checkout', error);
+    }
   }
 }
