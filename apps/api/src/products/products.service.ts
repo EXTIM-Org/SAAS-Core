@@ -37,9 +37,13 @@ export class ProductsService {
       };
 
       await firstValueFrom(
-        this.httpService.post(`${searchApiUrl}/search/ingest/product`, payload, {
-          timeout: 5000,
-        })
+        this.httpService.post(
+          `${searchApiUrl}/search/ingest/product`,
+          payload,
+          {
+            timeout: 5000,
+          },
+        ),
       );
       this.logger.log(`Successfully queued product ${product.id} for indexing`);
     } catch (error) {
@@ -109,17 +113,15 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found or you do not have access`);
+      throw new NotFoundException(
+        `Product with ID ${id} not found or you do not have access`,
+      );
     }
 
     return product;
   }
 
-  async update(
-    userId: string,
-    id: string,
-    updateProductDto: UpdateProductDto,
-  ) {
+  async update(userId: string, id: string, updateProductDto: UpdateProductDto) {
     const { projectId, ...updateData } = updateProductDto;
 
     // Check if product exists and belongs to a project owned by the user
@@ -133,7 +135,9 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found or you do not have access`);
+      throw new NotFoundException(
+        `Product with ID ${id} not found or you do not have access`,
+      );
     }
 
     // If attempting to change projectId, verify the new project belongs to the user
@@ -177,7 +181,9 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found or you do not have access`);
+      throw new NotFoundException(
+        `Product with ID ${id} not found or you do not have access`,
+      );
     }
 
     return this.prisma.product.delete({

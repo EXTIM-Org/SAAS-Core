@@ -18,16 +18,17 @@ export class AdminController {
   @Get('stats')
   @Roles('SUPER_ADMIN')
   async getStats() {
-    const [totalUsers, totalProjects, totalOrders, revenueResult] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.project.count(),
-      this.prisma.order.count(),
-      this.prisma.order.aggregate({
-        _sum: {
-          totalAmount: true,
-        },
-      }),
-    ]);
+    const [totalUsers, totalProjects, totalOrders, revenueResult] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.project.count(),
+        this.prisma.order.count(),
+        this.prisma.order.aggregate({
+          _sum: {
+            totalAmount: true,
+          },
+        }),
+      ]);
 
     const totalRevenue = revenueResult._sum.totalAmount || 0;
 
