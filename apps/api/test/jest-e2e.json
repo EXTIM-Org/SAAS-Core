@@ -9,5 +9,6 @@
   "moduleNameMapper": {
     "^@saas/database$": "<rootDir>/../../../packages/database/src",
     "^@saas/shared$": "<rootDir>/../../../packages/shared/src"
-  }
+  },
+  "setupFiles": ["<rootDir>/setup.ts"]
 }
