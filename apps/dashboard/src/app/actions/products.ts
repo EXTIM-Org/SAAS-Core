@@ -27,6 +27,18 @@ export async function getProductsAction(projectId: string) {
   return response.json();
 }
 
+export async function getProductAction(id: string) {
+  const response = await fetch(`${API_URL}/products/${id}`, {
+    headers: await getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch product');
+  }
+
+  return response.json();
+}
+
 export async function createProductAction(
   projectId: string,
   data: {

@@ -70,8 +70,18 @@ export default function StorefrontPage() {
   }, [projectId, fetchCart]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let mounted = true;
+    const init = async () => {
+      if (mounted) {
+        await fetchData();
+      }
+    };
+    init();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAddToCart = async (productId: string) => {
     try {
