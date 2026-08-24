@@ -77,6 +77,10 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^@saas/database$": "<rootDir>/../../../packages/database/src",
+      "^@saas/shared$": "<rootDir>/../../../packages/shared/src"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
