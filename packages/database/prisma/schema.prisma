@@ -8,14 +8,20 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String     @id @default(uuid())
+  email     String     @unique
+  role      GlobalRole @default(USER)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   projects Project[]
   carts    Cart[]
   Order    Order[]
+}
+
+enum GlobalRole {
+  SUPER_ADMIN
+  USER
 }
 
 model Project {
