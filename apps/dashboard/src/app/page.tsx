@@ -52,7 +52,7 @@ export default function Home() {
             <Card className="border-none shadow-sm bg-background">
               <CardHeader>
                 <Search className="h-10 w-10 text-primary mb-4" />
-                <CardTitle>Lightning Fast Search</CardTitle>
+                <CardTitle>Lightning Fast Search (Typesense)</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
