@@ -17,9 +17,9 @@ import { TypesenseSchemaService } from './typesense-schema.service';
       useFactory: (configService: ConfigService) => ({
         connection: {
           url:
-            configService.get<string>('REDIS_URL_DOCKER') ||
             configService.get<string>('REDIS_URL') ||
-            'redis://localhost:6379',
+            configService.get<string>('REDIS_URL_DOCKER') ||
+            'redis://127.0.0.1:6379',
         },
       }),
       inject: [ConfigService],
@@ -45,9 +45,9 @@ import { TypesenseSchemaService } from './typesense-schema.service';
       useFactory: async (configService: ConfigService) => {
         const { Client } = await import('typesense');
         const url =
-          configService.get<string>('TYPESENSE_URL_DOCKER') ||
           configService.get<string>('TYPESENSE_URL') ||
-          'http://localhost:8108';
+          configService.get<string>('TYPESENSE_URL_DOCKER') ||
+          'http://127.0.0.1:8108';
         const apiKey =
           configService.get<string>('TYPESENSE_API_KEY') ||
           'typesense-local-key';
