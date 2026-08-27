@@ -10,6 +10,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
+    ConfigModule,
     UsersModule,
     PassportModule,
     NotificationsModule,

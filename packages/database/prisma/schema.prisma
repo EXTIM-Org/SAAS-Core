@@ -9,9 +9,10 @@ datasource db {
 
 model User {
   id        String     @id @default(uuid())
-  email     String     @unique
-  password  String?
-  role      GlobalRole @default(USER)
+  email        String     @unique
+  password     String?
+  refreshToken String?
+  role         GlobalRole @default(USER)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 

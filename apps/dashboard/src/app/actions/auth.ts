@@ -37,6 +37,15 @@ export async function loginAction(data: { email: string; password: string }) {
         path: '/',
       });
     }
+    
+    if (result.refreshToken) {
+      (await cookies()).set('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: '/',
+      });
+    }
     return { success: true };
   } catch (err: any) {
     console.error('loginAction FETCH THREW AN ERROR:', err);
@@ -74,6 +83,15 @@ export async function signupAction(data: { email: string; password: string }) {
         path: '/',
       });
     }
+    
+    if (result.refreshToken) {
+      (await cookies()).set('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        path: '/',
+      });
+    }
     return { success: true };
   } catch (err: any) {
     console.error('signupAction FETCH THREW AN ERROR:', err);
@@ -82,6 +100,22 @@ export async function signupAction(data: { email: string; password: string }) {
 }
 
 export async function logoutAction() {
+  const token = (await cookies()).get('token')?.value;
+  
+  if (token) {
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+    } catch (err) {
+      console.error('Failed to call logout API:', err);
+    }
+  }
+
   (await cookies()).delete('token');
+  (await cookies()).delete('refreshToken');
   return { success: true };
 }

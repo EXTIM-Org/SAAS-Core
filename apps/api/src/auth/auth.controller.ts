@@ -53,4 +53,23 @@ export class AuthController {
   getProfile(@CurrentUser() user: UserPayload & { email: string }) {
     return user;
   }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({
+    status: 201,
+    description: 'Returns new access and refresh tokens.',
+  })
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    return this.authService.refresh(refreshToken);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Logout user and revoke refresh token' })
+  @ApiResponse({ status: 201, description: 'User successfully logged out.' })
+  async logout(@CurrentUser() user: UserPayload) {
+    await this.authService.logout(user.userId || (user as any).sub);
+    return { success: true };
+  }
 }
