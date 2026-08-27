@@ -24,11 +24,24 @@ export class SentryFilter implements ExceptionFilter {
     }
 
     if (response && typeof response.status === 'function') {
-      response.status(status).json({
+      const errorResponse: any = {
         statusCode: status,
         timestamp: new Date().toISOString(),
         path: request.url,
-      });
+      };
+
+      if (exception instanceof HttpException) {
+        const httpResponse = exception.getResponse();
+        if (typeof httpResponse === 'object' && httpResponse !== null) {
+          Object.assign(errorResponse, httpResponse);
+        } else {
+          errorResponse.message = httpResponse;
+        }
+      } else if (exception instanceof Error) {
+        errorResponse.message = exception.message;
+      }
+
+      response.status(status).json(errorResponse);
     }
   }
 }

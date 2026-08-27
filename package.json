@@ -6,6 +6,10 @@
     "pnpm": ">=11.17.0"
   },
   "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:all": "pnpm services:up && pnpm dev",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit --project apps/api/tsconfig.json && tsc --noEmit --project apps/dashboard/tsconfig.json"

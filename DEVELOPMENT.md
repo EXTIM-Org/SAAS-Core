@@ -45,9 +45,13 @@ Then use the package manager version pinned by the repository.
 
 ## 4. Start Infrastructure
 
+You can start the infrastructure (PostgreSQL, Redis, Typesense) via the built-in package script:
+
 ```bash
-docker compose up -d
+pnpm services:up
 ```
+
+(This is equivalent to `docker compose up -d`).
 
 Check status:
 
@@ -145,14 +149,10 @@ pnpm install
 
 ## 8. Database
 
-After Prisma is set up:
+After Prisma is set up, run the database migrations:
 
 ```bash
-<<<<<<< HEAD
-pnpm prisma migrate dev
-=======
 pnpm db:migrate:dev
->>>>>>> 162f8c2 (Phase 0)
 ```
 
 Prefer repository scripts defined in `package.json` when they exist.
@@ -167,7 +167,17 @@ Seeds must be safe for local development only and must never target production.
 
 ## 9. Starting Applications
 
-### Recommended way (all apps)
+### Recommended way (Everything at once)
+
+To start the Docker infrastructure AND all the frontend/backend apps concurrently, use:
+
+```bash
+pnpm dev:all
+```
+
+### Start only the applications
+
+If your Docker containers are already running, you can just start all apps:
 
 ```bash
 pnpm dev
@@ -214,8 +224,10 @@ Run integration tests when the changed feature uses infrastructure or crosses th
 Stop containers while keeping data:
 
 ```bash
-docker compose down
+pnpm services:down
 ```
+
+(This is equivalent to `docker compose down`).
 
 Reset everything (delete volumes):
 
