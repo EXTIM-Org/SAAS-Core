@@ -79,7 +79,20 @@ export default function ProjectDetailsPage() {
     setIsLoading(true);
     setDomainError('');
 
-    const res = await createDomainAction({ name: newDomainName, projectId });
+    let cleanDomainName = newDomainName.trim().toLowerCase();
+    try {
+      // If user pasted a full URL (e.g., https://digiato.com/), extract just the hostname
+      if (cleanDomainName.startsWith('http://') || cleanDomainName.startsWith('https://')) {
+        cleanDomainName = new URL(cleanDomainName).hostname;
+      } else if (cleanDomainName.includes('/')) {
+        // Fallback for something like digiato.com/
+        cleanDomainName = cleanDomainName.split('/')[0];
+      }
+    } catch {
+      // Ignore URL parsing errors, use original
+    }
+
+    const res = await createDomainAction({ name: cleanDomainName, projectId });
     if (res.error) {
       setDomainError(res.error);
     } else {

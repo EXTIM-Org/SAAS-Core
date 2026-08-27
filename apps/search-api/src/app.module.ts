@@ -11,6 +11,7 @@ import { SearchController } from './search.controller';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '../../.env',
     }),
     HttpModule,
     BullModule.forRootAsync({

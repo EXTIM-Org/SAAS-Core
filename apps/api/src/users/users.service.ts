@@ -6,24 +6,20 @@ import { Prisma } from '@saas/database';
 
 @Injectable()
 export class UsersService {
-  // Temporary in-memory map to store password hashes since the database schema currently lacks a password field
-  private passwordHashes = new Map<string, string>();
 
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(createUserDto: CreateUserDto) {
     const { email, password } = createUserDto;
 
-    // Hash the password, but strictly pass only email to Prisma per current database schema
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Store hash in memory
-    this.passwordHashes.set(email, hashedPassword);
 
     try {
       return await this.prisma.user.create({
         data: {
           email,
+          password: hashedPassword,
         },
       });
     } catch (error: unknown) {
@@ -37,8 +33,12 @@ export class UsersService {
     }
   }
 
-  getPasswordHash(email: string): string | undefined {
-    return this.passwordHashes.get(email);
+  async getPasswordHash(email: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { password: true },
+    });
+    return user?.password || null;
   }
 
   async findByEmail(email: string) {

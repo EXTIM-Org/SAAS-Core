@@ -47,7 +47,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const hashedPassword = this.usersService.getPasswordHash(email);
+    const hashedPassword = await this.usersService.getPasswordHash(email);
 
     if (!hashedPassword) {
       throw new UnauthorizedException('Invalid credentials');

@@ -10,6 +10,7 @@ import { TypesenseSchemaService } from './typesense-schema.service';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '../../.env',
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
