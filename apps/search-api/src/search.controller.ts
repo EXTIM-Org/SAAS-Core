@@ -40,7 +40,7 @@ export class SearchController {
     }
 
     if (!q) {
-      return { hits: [] };
+      return [];
     }
 
     const searchResults = await this.typesenseClient
@@ -52,7 +52,7 @@ export class SearchController {
         filter_by: `projectId:=${projectId}`,
       });
 
-    return searchResults;
+    return searchResults.hits?.map((hit) => hit.document) || [];
   }
 
   @Post('ingest/product')
