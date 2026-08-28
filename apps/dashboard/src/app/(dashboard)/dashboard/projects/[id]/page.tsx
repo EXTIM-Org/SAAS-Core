@@ -130,8 +130,8 @@ export default function ProjectDetailsPage() {
       const urlObj = new URL(crawlUrl);
       const domain = urlObj.hostname;
 
-      // Basic check if the domain belongs to this project
-      const hasDomain = domains.some((d) => d.name === domain);
+      // Basic check if the domain belongs to this project (allow subdomains like www.)
+      const hasDomain = domains.some((d) => domain === d.name || domain.endsWith(`.${d.name}`));
       if (!hasDomain && domains.length > 0) {
         toast.error('The URL domain must match one of your configured domains.');
         setIsCrawling(false);
