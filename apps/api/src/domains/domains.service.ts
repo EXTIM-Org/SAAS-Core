@@ -14,17 +14,12 @@ export class DomainsService {
   async create(userId: string, createDomainDto: CreateDomainDto) {
     const { projectId, name } = createDomainDto;
 
-    // Verify project belongs to user
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
+    const member = await this.prisma.projectMember.findUnique({
+      where: { userId_projectId: { userId, projectId } },
     });
 
-    if (!project) {
-      throw new NotFoundException(`Project with ID ${projectId} not found`);
-    }
-
-    if (project.userId !== userId) {
-      throw new UnauthorizedException('You do not own this project');
+    if (!member || member.role === 'VIEWER') {
+      throw new UnauthorizedException('You do not have permission to add domains to this project');
     }
 
     const existingDomain = await this.prisma.domain.findUnique({
@@ -44,17 +39,12 @@ export class DomainsService {
   }
 
   async findAll(userId: string, projectId: string) {
-    // Verify project belongs to user
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
+    const member = await this.prisma.projectMember.findUnique({
+      where: { userId_projectId: { userId, projectId } },
     });
 
-    if (!project) {
-      throw new NotFoundException(`Project with ID ${projectId} not found`);
-    }
-
-    if (project.userId !== userId) {
-      throw new UnauthorizedException('You do not own this project');
+    if (!member) {
+      throw new UnauthorizedException('You do not have access to this project');
     }
 
     return this.prisma.domain.findMany({
@@ -72,9 +62,13 @@ export class DomainsService {
       throw new NotFoundException(`Domain with ID ${id} not found`);
     }
 
-    if (domain.project.userId !== userId) {
+    const member = await this.prisma.projectMember.findUnique({
+      where: { userId_projectId: { userId, projectId: domain.projectId } },
+    });
+
+    if (!member || member.role === 'VIEWER') {
       throw new UnauthorizedException(
-        'You do not own the project this domain belongs to',
+        'You do not have permission to delete domains from this project',
       );
     }
 

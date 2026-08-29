@@ -16,7 +16,7 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  projects Project[]
+  projectMembers ProjectMember[]
   carts    Cart[]
   Order    Order[]
 }
@@ -29,12 +29,10 @@ enum GlobalRole {
 model Project {
   id        String   @id @default(uuid())
   name      String
-  userId    String
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   autoCrawlIntervalDays Int?
-
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members    ProjectMember[]
   domains    Domain[]
   categories Category[]
   products   Product[]
@@ -144,4 +142,25 @@ model SystemSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ProjectMember {
+  id        String      @id @default(uuid())
+  userId    String
+  projectId String
+  role      ProjectRole @default(VIEWER)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+enum ProjectRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
 }

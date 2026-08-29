@@ -57,17 +57,12 @@ export class ProductsService {
   async create(userId: string, createProductDto: CreateProductDto) {
     const { projectId, ...productData } = createProductDto;
 
-    // Verify project belongs to user
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
+    const member = await this.prisma.projectMember.findUnique({
+      where: { userId_projectId: { userId, projectId } },
     });
 
-    if (!project) {
-      throw new NotFoundException(`Project with ID ${projectId} not found`);
-    }
-
-    if (project.userId !== userId) {
-      throw new UnauthorizedException('You do not own this project');
+    if (!member || member.role === 'VIEWER') {
+      throw new UnauthorizedException('You do not have permission to add products to this project');
     }
 
     const product = await this.prisma.product.create({
@@ -84,17 +79,12 @@ export class ProductsService {
   }
 
   async findAll(userId: string, projectId: string) {
-    // Verify project belongs to user
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
+    const member = await this.prisma.projectMember.findUnique({
+      where: { userId_projectId: { userId, projectId } },
     });
 
-    if (!project) {
-      throw new NotFoundException(`Project with ID ${projectId} not found`);
-    }
-
-    if (project.userId !== userId) {
-      throw new UnauthorizedException('You do not own this project');
+    if (!member) {
+      throw new UnauthorizedException('You do not have access to this project');
     }
 
     return this.prisma.product.findMany({
@@ -107,7 +97,9 @@ export class ProductsService {
       where: {
         id,
         project: {
-          userId,
+          members: {
+            some: { userId },
+          },
         },
       },
     });
@@ -129,7 +121,9 @@ export class ProductsService {
       where: {
         id,
         project: {
-          userId,
+          members: {
+            some: { userId },
+          },
         },
       },
     });
@@ -145,7 +139,9 @@ export class ProductsService {
       const newProject = await this.prisma.project.findFirst({
         where: {
           id: projectId,
-          userId,
+          members: {
+            some: { userId },
+          },
         },
       });
 
@@ -175,7 +171,9 @@ export class ProductsService {
       where: {
         id,
         project: {
-          userId,
+          members: {
+            some: { userId },
+          },
         },
       },
     });

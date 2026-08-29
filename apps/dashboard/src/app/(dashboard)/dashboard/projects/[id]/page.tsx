@@ -258,12 +258,19 @@ export default function ProjectDetailsPage() {
             Manage details and domains for this project.
           </p>
         </div>
-        <Link href={`/dashboard/projects/${projectId}/products`}>
-          <Button className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Manage Products
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/dashboard/projects/${projectId}/members`}>
+            <Button variant="outline" className="flex items-center gap-2">
+              Team Members
+            </Button>
+          </Link>
+          <Link href={`/dashboard/projects/${projectId}/products`}>
+            <Button className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Manage Products
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>

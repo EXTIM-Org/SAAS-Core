@@ -13,6 +13,7 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { OrdersModule } from './orders/orders.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ProjectMembersModule } from './project-members/project-members.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     OrdersModule,
     AdminModule,
     NotificationsModule,
+    ProjectMembersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

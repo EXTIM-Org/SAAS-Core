@@ -109,9 +109,14 @@ export class AdminController {
         name: true,
         autoCrawlIntervalDays: true,
         createdAt: true,
-        user: {
+        members: {
+          where: { role: 'OWNER' },
           select: {
-            email: true,
+            user: {
+              select: {
+                email: true,
+              }
+            }
           }
         },
         _count: {

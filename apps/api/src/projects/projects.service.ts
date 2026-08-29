@@ -11,20 +11,34 @@ export class ProjectsService {
     return this.prisma.project.create({
       data: {
         ...createProjectDto,
-        userId,
+        members: {
+          create: {
+            userId,
+            role: 'OWNER',
+          }
+        }
       },
     });
   }
 
   async findAll(userId: string) {
     return this.prisma.project.findMany({
-      where: { userId },
+      where: {
+        members: {
+          some: { userId },
+        },
+      },
     });
   }
 
   async findOne(userId: string, id: string) {
     const project = await this.prisma.project.findFirst({
-      where: { id, userId },
+      where: {
+        id,
+        members: {
+          some: { userId },
+        },
+      },
     });
 
     if (!project) {

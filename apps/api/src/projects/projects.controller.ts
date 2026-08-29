@@ -20,6 +20,9 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { ProjectRoles } from '../auth/decorators/project-roles.decorator';
+import { ProjectRoleGuard } from '../auth/guards/project-role.guard';
+import { ProjectRole } from '@saas/database';
 
 @ApiTags('projects')
 @ApiBearerAuth()
@@ -61,6 +64,8 @@ export class ProjectsController {
   }
 
   @Patch(':id')
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.OWNER, ProjectRole.ADMIN)
   @ApiOperation({ summary: 'Update a project by id' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Returns the updated project.' })
@@ -77,6 +82,8 @@ export class ProjectsController {
   }
 
   @Delete(':id')
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.OWNER)
   @ApiOperation({ summary: 'Delete a project by id' })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiResponse({ status: 200, description: 'Returns the deleted project.' })
