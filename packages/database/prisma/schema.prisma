@@ -30,8 +30,9 @@ model Project {
   id        String   @id @default(uuid())
   name      String
   userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  autoCrawlIntervalDays Int?
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   domains    Domain[]
@@ -42,11 +43,12 @@ model Project {
 }
 
 model Domain {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  projectId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  name                  String   @unique
+  projectId             String
+  lastCrawledAt         DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
@@ -134,4 +136,12 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

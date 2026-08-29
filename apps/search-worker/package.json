@@ -30,6 +30,7 @@
     "axios": "^1.19.0",
     "bullmq": "^6.1.2",
     "cheerio": "^1.2.0",
+    "random-useragent": "^0.5.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "typesense": "^3.0.6"
@@ -43,6 +44,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
+    "@types/random-useragent": "^0.3.3",
     "@types/supertest": "^7.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",

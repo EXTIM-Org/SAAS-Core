@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getProject } from '@/app/actions/projects';
 import {
@@ -8,7 +8,15 @@ import {
   createDomainAction,
   deleteDomainAction,
 } from '@/app/actions/domains';
-import { searchProjectAction, crawlUrlAction } from '@/app/actions/search';
+import { 
+  searchProjectAction, 
+  crawlUrlAction,
+  getProjectDocumentsAction,
+  deleteProjectDocumentAction,
+  deleteAllProjectDocumentsAction,
+  clearProjectQueueAction
+} from '@/app/actions/search';
+import DashboardLoading from '../../loading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SearchResult } from '@saas/shared';
@@ -20,7 +28,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { ArrowLeft, Trash2, Package } from 'lucide-react';
+import { ArrowLeft, Trash2, Package, ChevronLeft, ChevronRight, RefreshCw, Save } from 'lucide-react';
 import Link from 'next/link';
 
 interface Project {
@@ -46,16 +54,22 @@ export default function ProjectDetailsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const [crawlUrl, setCrawlUrl] = useState('');
-  const [isCrawling, setIsCrawling] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
 
+  const [indexedDocuments, setIndexedDocuments] = useState<any[]>([]);
+  const [docsPage, setDocsPage] = useState(1);
+  const [docsTotalPages, setDocsTotalPages] = useState(1);
+  const [docsTotal, setDocsTotal] = useState(0);
+  const [isDeletingDoc, setIsDeletingDoc] = useState<string | null>(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [isClearingQueue, setIsClearingQueue] = useState(false);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+
   useEffect(() => {
-    async function fetchData() {
+    async function fetchInitialData() {
       try {
         const [projectData, domainsData] = await Promise.all([
           getProject(projectId),
@@ -70,8 +84,28 @@ export default function ProjectDetailsPage() {
         setInitialLoading(false);
       }
     }
-    fetchData();
+    fetchInitialData();
   }, [projectId]);
+
+  const fetchDocuments = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoadingDocs(true);
+    try {
+      const documentsData = await getProjectDocumentsAction(projectId, docsPage);
+      if (documentsData.success && documentsData.data) {
+        setIndexedDocuments(documentsData.data.documents || []);
+        setDocsTotalPages(documentsData.data.totalPages || 1);
+        setDocsTotal(documentsData.data.total || 0);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      if (showLoading) setIsLoadingDocs(false);
+    }
+  }, [projectId, docsPage]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const handleCreateDomain = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +132,14 @@ export default function ProjectDetailsPage() {
     } else {
       setDomains([...domains, res.data]);
       setNewDomainName('');
+      
+      toast.info('Starting automatic crawling...');
+      const crawlRes = await crawlUrlAction(projectId, `https://${cleanDomainName}`, cleanDomainName);
+      if (crawlRes.error) {
+        toast.error(`Auto-crawl failed: ${crawlRes.error}`);
+      } else {
+        toast.success(`Crawling started! Finding pages for ${cleanDomainName}...`);
+      }
     }
     setIsLoading(false);
   };
@@ -113,44 +155,7 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  const handleCrawlSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!crawlUrl.trim()) return;
 
-    try {
-      new URL(crawlUrl);
-    } catch {
-      toast.error('Please enter a valid URL (e.g. https://example.com/page)');
-      return;
-    }
-
-    setIsCrawling(true);
-
-    try {
-      const urlObj = new URL(crawlUrl);
-      const domain = urlObj.hostname;
-
-      // Basic check if the domain belongs to this project (allow subdomains like www.)
-      const hasDomain = domains.some((d) => domain === d.name || domain.endsWith(`.${d.name}`));
-      if (!hasDomain && domains.length > 0) {
-        toast.error('The URL domain must match one of your configured domains.');
-        setIsCrawling(false);
-        return;
-      }
-
-      const res = await crawlUrlAction(projectId, crawlUrl, domain);
-      if (res.error) {
-        toast.error(res.error);
-      } else {
-        toast.success(res.message || 'URL successfully submitted for indexing.');
-        setCrawlUrl('');
-      }
-    } catch {
-      toast.error('An unexpected error occurred.');
-    } finally {
-      setIsCrawling(false);
-    }
-  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,8 +173,52 @@ export default function ProjectDetailsPage() {
     setIsSearching(false);
   };
 
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('Are you sure you want to delete this indexed page?')) return;
+    setIsDeletingDoc(documentId);
+    const res = await deleteProjectDocumentAction(projectId, documentId);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success('Document deleted successfully');
+      setIndexedDocuments(indexedDocuments.filter((d) => d.id !== documentId));
+      setDocsTotal(prev => prev - 1);
+      setSearchResults(searchResults.filter((r) => r.id !== documentId));
+    }
+    setIsDeletingDoc(null);
+  };
+
+  const handleDeleteAllDocuments = async () => {
+    if (!confirm('Are you sure you want to delete ALL indexed pages? This cannot be undone.')) return;
+    setIsDeletingAll(true);
+    const res = await deleteAllProjectDocumentsAction(projectId);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success('All documents deleted successfully');
+      setIndexedDocuments([]);
+      setDocsTotal(0);
+      setDocsTotalPages(1);
+      setDocsPage(1);
+      setSearchResults([]);
+    }
+    setIsDeletingAll(false);
+  };
+
+  const handleClearQueue = async () => {
+    if (!confirm('Are you sure you want to clear the crawler queue? This will stop any pending crawls for this project.')) return;
+    setIsClearingQueue(true);
+    const res = await clearProjectQueueAction(projectId);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(res.message || 'Crawler queue cleared successfully');
+    }
+    setIsClearingQueue(false);
+  };
+
   if (initialLoading) {
-    return <p>Loading project...</p>;
+    return <DashboardLoading />;
   }
 
   if (error || !project) {
@@ -254,18 +303,22 @@ export default function ProjectDetailsPage() {
                 {domains.map((domain) => (
                   <li
                     key={domain.id}
-                    className="flex items-center justify-between p-4"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4"
                   >
-                    <span className="font-medium">{domain.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteDomain(domain.id)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    <span className="font-medium truncate">{domain.name}</span>
+                    <div className="flex items-center gap-2">
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteDomain(domain.id)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        title="Delete Domain"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -275,27 +328,115 @@ export default function ProjectDetailsPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Add Link to Index</CardTitle>
-          <CardDescription>
-            Submit a specific URL to be crawled and indexed immediately.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <form onSubmit={handleCrawlSubmit} className="flex gap-4">
-            <Input
-              type="url"
-              placeholder="https://example.com/article"
-              value={crawlUrl}
-              onChange={(e) => setCrawlUrl(e.target.value)}
-              disabled={isCrawling}
-              className="max-w-sm"
-              required
-            />
-            <Button type="submit" disabled={isCrawling || !crawlUrl.trim()}>
-              {isCrawling ? 'Submitting...' : 'Index URL'}
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle>Indexed Links</CardTitle>
+            <CardDescription>
+              View and manage links that have been indexed for your project. (Total: {docsTotal})
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchDocuments(true)}
+              disabled={isLoadingDocs}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingDocs ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-          </form>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleClearQueue}
+              disabled={isClearingQueue}
+              className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+            >
+              {isClearingQueue ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Clear Queue
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={handleDeleteAllDocuments}
+              disabled={isDeletingAll || indexedDocuments.length === 0}
+            >
+              {isDeletingAll ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Clear All Indexed
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            {isLoadingDocs ? (
+              <div className="p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <RefreshCw className="h-4 w-4 animate-spin" /> Loading...
+              </div>
+            ) : indexedDocuments.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No links indexed yet.
+              </div>
+            ) : (
+              <>
+                <ul className="divide-y max-h-96 overflow-y-auto">
+                  {indexedDocuments.map((doc) => (
+                    <li
+                      key={doc.id}
+                      className="flex items-center justify-between p-4 gap-4"
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate" title={doc.title || doc.url}>
+                          {doc.title || doc.url}
+                        </span>
+                        <a 
+                          href={doc.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs text-muted-foreground hover:underline truncate"
+                          title={doc.url}
+                        >
+                          {doc.url}
+                        </a>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteDocument(doc.id)}
+                        disabled={isDeletingDoc === doc.id}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                {docsTotalPages > 1 && (
+                  <div className="flex items-center justify-between p-4 border-t bg-muted/20">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDocsPage(p => Math.max(1, p - 1))}
+                      disabled={docsPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" /> Prev
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {docsPage} of {docsTotalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDocsPage(p => Math.min(docsTotalPages, p + 1))}
+                      disabled={docsPage === docsTotalPages}
+                    >
+                      Next <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -359,6 +500,36 @@ export default function ProjectDetailsPage() {
               </ul>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Integration Guide</CardTitle>
+          <CardDescription>
+            Copy and paste this snippet into your website's HTML to install the search widget.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="relative group">
+            <div className="bg-muted p-4 rounded-md font-mono text-sm overflow-x-auto whitespace-pre">
+              {`<div id="saas-search-widget" data-project-id="${projectId}" data-api-url="http://localhost:4001"></div>\n<script src="http://localhost:3001/widget.js" defer></script>`}
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => {
+                navigator.clipboard.writeText(`<div id="saas-search-widget" data-project-id="${projectId}" data-api-url="http://localhost:4001"></div>\n<script src="http://localhost:3001/widget.js" defer></script>`);
+                toast.success('Snippet copied to clipboard!');
+              }}
+            >
+              Copy
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mt-4">
+            Place the snippet just before the closing <code>&lt;/body&gt;</code> tag of your website.
+          </p>
         </CardContent>
       </Card>
     </div>

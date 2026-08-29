@@ -37,7 +37,9 @@ export class TypesenseSchemaService implements OnModuleInit {
     for (const collection of collections) {
       try {
         await this.typesenseClient.collections(collection.name).retrieve();
-        this.logger.log(`Typesense collection '${collection.name}' already exists.`);
+        this.logger.log(
+          `Typesense collection '${collection.name}' already exists.`,
+        );
       } catch (error) {
         if (
           typeof error === 'object' &&
@@ -45,14 +47,22 @@ export class TypesenseSchemaService implements OnModuleInit {
           'httpStatus' in error &&
           (error as Record<string, unknown>).httpStatus === 404
         ) {
-          this.logger.log(`Typesense collection '${collection.name}' not found. Creating...`);
+          this.logger.log(
+            `Typesense collection '${collection.name}' not found. Creating...`,
+          );
           await this.typesenseClient.collections().create({
             name: collection.name,
-            fields: collection.fields as import("typesense/lib/Typesense/Collection").CollectionFieldSchema[],
+            fields:
+              collection.fields as import('typesense/lib/Typesense/Collection').CollectionFieldSchema[],
           });
-          this.logger.log(`Typesense collection '${collection.name}' created successfully.`);
+          this.logger.log(
+            `Typesense collection '${collection.name}' created successfully.`,
+          );
         } else {
-          this.logger.error(`Error checking/creating Typesense collection '${collection.name}'`, error);
+          this.logger.error(
+            `Error checking/creating Typesense collection '${collection.name}'`,
+            error,
+          );
         }
       }
     }

@@ -1,24 +1,9 @@
 'use server';
 
-import { cookies } from 'next/headers';
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.API_URL ||
-  'http://localhost:4000';
-
-async function getAuthHeaders() {
-  const token = (await cookies()).get('token')?.value;
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
+import { fetchWithAuth } from './fetch-api';
 
 export async function getProjects() {
-  const response = await fetch(`${API_URL}/projects`, {
-    headers: await getAuthHeaders(),
-  });
+  const response = await fetchWithAuth('/projects');
 
   if (!response.ok) {
     throw new Error('Failed to fetch projects');
@@ -28,9 +13,7 @@ export async function getProjects() {
 }
 
 export async function getProject(id: string) {
-  const response = await fetch(`${API_URL}/projects/${id}`, {
-    headers: await getAuthHeaders(),
-  });
+  const response = await fetchWithAuth(`/projects/${id}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch project');
@@ -40,9 +23,8 @@ export async function getProject(id: string) {
 }
 
 export async function createProjectAction(data: { name: string }) {
-  const response = await fetch(`${API_URL}/projects`, {
+  const response = await fetchWithAuth(`/projects`, {
     method: 'POST',
-    headers: await getAuthHeaders(),
     body: JSON.stringify(data),
   });
 

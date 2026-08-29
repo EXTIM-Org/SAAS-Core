@@ -34,3 +34,4 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 4000);
 }
 void bootstrap();
+// trigger restart

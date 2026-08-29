@@ -30,7 +30,7 @@ import { TypesenseSchemaService } from './typesense-schema.service';
         attempts: 3,
         backoff: {
           type: 'exponential',
-          delay: 1000,
+          delay: 5000,
         },
       },
     }),

@@ -2,10 +2,16 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { HttpModule } from '@nestjs/axios';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { TypesenseSchemaService } from './typesense-schema.service';
 import { CoreApiClientService } from './core-api-client.service';
 import { SearchController } from './search.controller';
+import { PrismaService } from './prisma.service';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { CrawlSchedulerService } from './crawl-scheduler.service';
 
 @Module({
   imports: [
@@ -14,6 +20,7 @@ import { SearchController } from './search.controller';
       envFilePath: '../../.env',
     }),
     HttpModule,
+    ScheduleModule.forRoot(),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -31,12 +38,33 @@ import { SearchController } from './search.controller';
     }),
     BullModule.registerQueue({
       name: 'crawl-queue',
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+      },
+    }),
+    BullBoardModule.forRoot({
+      route: '/admin/queues',
+      adapter: ExpressAdapter,
+    }),
+    BullBoardModule.forFeature({
+      name: 'default',
+      adapter: BullMQAdapter,
+    }),
+    BullBoardModule.forFeature({
+      name: 'crawl-queue',
+      adapter: BullMQAdapter,
     }),
   ],
   controllers: [AppController, SearchController],
   providers: [
+    PrismaService,
     TypesenseSchemaService,
     CoreApiClientService,
+    CrawlSchedulerService,
     {
       provide: 'TYPESENSE_CLIENT',
       useFactory: async (configService: ConfigService) => {

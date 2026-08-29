@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getProjects, createProjectAction } from '@/app/actions/projects';
+import DashboardLoading from './loading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -96,7 +97,7 @@ export default function DashboardPage() {
       </Card>
 
       {initialLoading ? (
-        <p>Loading projects...</p>
+        <DashboardLoading />
       ) : projects.length === 0 ? (
         <p>No projects found. Create one above!</p>
       ) : (

@@ -29,8 +29,9 @@ export class AppController {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const client = await (this.queue as any).client;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (client && client.status === 'ready') {
         redisStatus = { ok: true };
       }
