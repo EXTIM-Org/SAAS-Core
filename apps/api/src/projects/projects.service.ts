@@ -31,13 +31,19 @@ export class ProjectsService {
     });
   }
 
-  async findOne(userId: string, id: string) {
+  async findOne(user: { userId: string; role?: string }, id: string) {
+    const isSuperAdmin = user.role === 'SUPER_ADMIN';
+
     const project = await this.prisma.project.findFirst({
       where: {
         id,
-        members: {
-          some: { userId },
-        },
+        ...(isSuperAdmin
+          ? {}
+          : {
+              members: {
+                some: { userId: user.userId },
+              },
+            }),
       },
     });
 
@@ -48,8 +54,8 @@ export class ProjectsService {
     return project;
   }
 
-  async update(userId: string, id: string, updateProjectDto: UpdateProjectDto) {
-    await this.findOne(userId, id); // Ensure project exists and belongs to user
+  async update(user: { userId: string; role?: string }, id: string, updateProjectDto: UpdateProjectDto) {
+    await this.findOne(user, id); // Ensure project exists and belongs to user
 
     return this.prisma.project.update({
       where: { id },
@@ -57,8 +63,8 @@ export class ProjectsService {
     });
   }
 
-  async remove(userId: string, id: string) {
-    await this.findOne(userId, id); // Ensure project exists and belongs to user
+  async remove(user: { userId: string; role?: string }, id: string) {
+    await this.findOne(user, id); // Ensure project exists and belongs to user
 
     return this.prisma.project.delete({
       where: { id },

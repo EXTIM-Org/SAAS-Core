@@ -45,21 +45,26 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
           
           if (newToken) {
             token = newToken;
-            // Update cookies
-            cookieStore.set('token', newToken, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              maxAge: 7 * 24 * 60 * 60, // 7 days
-              path: '/',
-            });
             
-            if (result.refreshToken) {
-              cookieStore.set('refreshToken', result.refreshToken, {
+            try {
+              // Update cookies
+              cookieStore.set('token', newToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                maxAge: 30 * 24 * 60 * 60, // 30 days
+                maxAge: 7 * 24 * 60 * 60, // 7 days
                 path: '/',
               });
+              
+              if (result.refreshToken) {
+                cookieStore.set('refreshToken', result.refreshToken, {
+                  httpOnly: true,
+                  secure: process.env.NODE_ENV === 'production',
+                  maxAge: 30 * 24 * 60 * 60, // 30 days
+                  path: '/',
+                });
+              }
+            } catch (cookieError) {
+              console.warn('Could not update cookies during SSR. Tokens will not be persisted in this request.');
             }
 
             // Retry original request with new token

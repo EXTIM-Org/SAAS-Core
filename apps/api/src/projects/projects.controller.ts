@@ -59,8 +59,8 @@ export class ProjectsController {
     status: 404,
     description: 'Project not found or unauthorized.',
   })
-  findOne(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
-    return this.projectsService.findOne(user.userId, id);
+  findOne(@CurrentUser() user: { userId: string; role: string }, @Param('id') id: string) {
+    return this.projectsService.findOne(user, id);
   }
 
   @Patch(':id')
@@ -74,11 +74,11 @@ export class ProjectsController {
     description: 'Project not found or unauthorized.',
   })
   update(
-    @CurrentUser() user: { userId: string },
+    @CurrentUser() user: { userId: string; role: string },
     @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
-    return this.projectsService.update(user.userId, id, updateProjectDto);
+    return this.projectsService.update(user, id, updateProjectDto);
   }
 
   @Delete(':id')
@@ -91,7 +91,7 @@ export class ProjectsController {
     status: 404,
     description: 'Project not found or unauthorized.',
   })
-  remove(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
-    return this.projectsService.remove(user.userId, id);
+  remove(@CurrentUser() user: { userId: string; role: string }, @Param('id') id: string) {
+    return this.projectsService.remove(user, id);
   }
 }

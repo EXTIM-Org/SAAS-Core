@@ -18,9 +18,11 @@ type Project = {
   name: string;
   autoCrawlIntervalDays: number | null;
   createdAt: string;
-  user: {
-    email: string;
-  };
+  members?: {
+    user: {
+      email: string;
+    }
+  }[];
   _count: {
     domains: number;
     products: number;
@@ -70,24 +72,34 @@ export function ProjectsTable({ projects: initialProjects }: { projects: Project
           {projects.map((project) => (
             <TableRow key={project.id}>
               <TableCell className="font-medium">{project.name}</TableCell>
-              <TableCell>{project.user.email}</TableCell>
-              <TableCell>{project._count.domains}</TableCell>
+              <TableCell>{project.members?.[0]?.user?.email || 'Unknown'}</TableCell>
+              <TableCell>{project._count?.domains || 0}</TableCell>
               <TableCell>{project._count.products}</TableCell>
               <TableCell>{new Date(project.createdAt).toLocaleDateString()}</TableCell>
               <TableCell>
-                <Input
-                  type="number"
-                  placeholder="Global default"
-                  min={0}
-                  className="w-full"
-                  defaultValue={project.autoCrawlIntervalDays ?? ''}
-                  onBlur={(e) => {
-                    const currentVal = project.autoCrawlIntervalDays === null ? '' : project.autoCrawlIntervalDays.toString();
-                    if (e.target.value !== currentVal) {
-                      handleUpdateInterval(project.id, e.target.value);
-                    }
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Global default"
+                    min={0}
+                    className="w-full"
+                    defaultValue={project.autoCrawlIntervalDays ?? ''}
+                    onBlur={(e) => {
+                      const currentVal = project.autoCrawlIntervalDays === null ? '' : project.autoCrawlIntervalDays.toString();
+                      if (e.target.value !== currentVal) {
+                        handleUpdateInterval(project.id, e.target.value);
+                      }
+                    }}
+                  />
+                  <a 
+                    href={`http://localhost:3001/dashboard/projects/${project.id}`} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    View
+                  </a>
+                </div>
               </TableCell>
             </TableRow>
           ))}
