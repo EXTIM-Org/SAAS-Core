@@ -153,6 +153,68 @@ export class SearchController {
     }
   }
 
+  @Get(':projectId/analytics')
+  async getTenantAnalytics(
+    @Param('projectId') projectId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    if (authorization) {
+      const isValid = await this.coreApiClientService.validateProject(
+        projectId,
+        authorization,
+      );
+      if (!isValid) {
+        throw new NotFoundException(
+          `Project with ID ${projectId} not found or unauthorized`,
+        );
+      }
+    }
+
+    try {
+      const totalSearchesStr = await this.redisClient.get(
+        `tenant:${projectId}:searches`,
+      );
+      const totalSearches = totalSearchesStr ? parseInt(totalSearchesStr, 10) : 0;
+
+      const topQueriesRaw = await this.redisClient.zrevrange(
+        `tenant:${projectId}:top_queries`,
+        0,
+        9,
+        'WITHSCORES',
+      );
+      const topQueries = [];
+      for (let i = 0; i < topQueriesRaw.length; i += 2) {
+        topQueries.push({
+          term: topQueriesRaw[i],
+          count: parseInt(topQueriesRaw[i + 1], 10),
+        });
+      }
+
+      const zeroQueriesRaw = await this.redisClient.zrevrange(
+        `tenant:${projectId}:zero_queries`,
+        0,
+        9,
+        'WITHSCORES',
+      );
+      const zeroQueries = [];
+      for (let i = 0; i < zeroQueriesRaw.length; i += 2) {
+        zeroQueries.push({
+          term: zeroQueriesRaw[i],
+          count: parseInt(zeroQueriesRaw[i + 1], 10),
+        });
+      }
+
+      return {
+        totalSearches,
+        topQueries,
+        zeroQueries,
+      };
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      return { totalSearches: 0, topQueries: [], zeroQueries: [] };
+    }
+  }
+
   @Get('public/:projectId/search')
   async publicSearch(
     @Param('projectId') projectId: string,
@@ -176,6 +238,16 @@ export class SearchController {
       // Track search
       try {
         await this.redisClient.incr('search_count:today');
+
+        // Tenant tracking
+        await this.redisClient.incr(`tenant:${projectId}:searches`);
+        await this.redisClient.zincrby(`tenant:${projectId}:top_queries`, 1, q.toLowerCase());
+        
+        const hasHits = searchResults.hits && searchResults.hits.length > 0;
+        if (!hasHits) {
+          await this.redisClient.zincrby(`tenant:${projectId}:zero_queries`, 1, q.toLowerCase());
+        }
+
         // Set expiry to midnight UTC if it's newly created
         const ttl = await this.redisClient.ttl('search_count:today');
         if (ttl === -1) {
@@ -225,6 +297,16 @@ export class SearchController {
     // Track search
     try {
       await this.redisClient.incr('search_count:today');
+
+      // Tenant tracking
+      await this.redisClient.incr(`tenant:${projectId}:searches`);
+      await this.redisClient.zincrby(`tenant:${projectId}:top_queries`, 1, q.toLowerCase());
+      
+      const hasHits = searchResults.hits && searchResults.hits.length > 0;
+      if (!hasHits) {
+        await this.redisClient.zincrby(`tenant:${projectId}:zero_queries`, 1, q.toLowerCase());
+      }
+
       const ttl = await this.redisClient.ttl('search_count:today');
       if (ttl === -1) {
         const now = new Date();

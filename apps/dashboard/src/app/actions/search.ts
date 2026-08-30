@@ -151,3 +151,25 @@ export async function clearProjectQueueAction(projectId: string) {
     return { error: err.message || 'An error occurred' };
   }
 }
+
+export async function getProjectAnalyticsAction(projectId: string) {
+  const url = new URL(`${SEARCH_API_URL}/search/${projectId}/analytics`);
+  
+  try {
+    const response = await fetchWithAuth(url.toString(), {
+      method: 'GET',
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.message || 'Failed to fetch analytics' };
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    const err = error as Error;
+    return { error: err.message || 'An error occurred' };
+  }
+}

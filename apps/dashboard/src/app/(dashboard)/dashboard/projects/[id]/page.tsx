@@ -14,7 +14,8 @@ import {
   getProjectDocumentsAction,
   deleteProjectDocumentAction,
   deleteAllProjectDocumentsAction,
-  clearProjectQueueAction
+  clearProjectQueueAction,
+  getProjectAnalyticsAction
 } from '@/app/actions/search';
 import DashboardLoading from '../../loading';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { ArrowLeft, Trash2, Package, ChevronLeft, ChevronRight, RefreshCw, Save, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Trash2, Package, ChevronLeft, ChevronRight, RefreshCw, Save, Copy, Check, BarChart2, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 
 interface Project {
@@ -68,6 +69,34 @@ export default function ProjectDetailsPage() {
   const [isClearingQueue, setIsClearingQueue] = useState(false);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
+  const [analytics, setAnalytics] = useState<{
+    totalSearches: number;
+    topQueries: { term: string; count: number }[];
+    zeroQueries: { term: string; count: number }[];
+  } | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+
+  const fetchAnalytics = useCallback(async () => {
+    setIsLoadingAnalytics(true);
+    try {
+      const res = await getProjectAnalyticsAction(projectId);
+      if (res.success && res.data) {
+        setAnalytics(res.data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoadingAnalytics(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      fetchAnalytics();
+    }
+  }, [activeTab, fetchAnalytics]);
+
 
   const handleCopySnippet = () => {
     navigator.clipboard.writeText(`<div id="saas-search-widget" data-project-id="${projectId}" data-api-url="http://localhost:4001"></div>\n<script src="http://localhost:3001/widget.js" defer></script>`);
@@ -251,6 +280,26 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex items-center gap-4 border-b pb-4">
+        <Button 
+          variant={activeTab === 'overview' ? 'default' : 'ghost'} 
+          onClick={() => setActiveTab('overview')}
+          className="gap-2"
+        >
+          <LayoutDashboard className="h-4 w-4" /> Overview
+        </Button>
+        <Button 
+          variant={activeTab === 'analytics' ? 'default' : 'ghost'} 
+          onClick={() => setActiveTab('analytics')}
+          className="gap-2"
+        >
+          <BarChart2 className="h-4 w-4" /> Search Analytics
+        </Button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <div className="flex flex-col gap-8">
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-4 mb-2">
@@ -544,6 +593,85 @@ export default function ProjectDetailsPage() {
           </p>
         </CardContent>
       </Card>
+    </div>
+      )}
+
+      {activeTab === 'analytics' && (
+        <div className="flex flex-col gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Search Analytics</CardTitle>
+              <CardDescription>
+                Overview of search activity for {project.name}. Data is updated in real-time.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAnalytics ? (
+                <div className="flex justify-center p-8"><RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : analytics ? (
+                <div className="flex flex-col gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Searches</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{analytics.totalSearches}</div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Top 10 Queries</CardTitle>
+                        <CardDescription>Most frequently searched terms</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {analytics.topQueries.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">No searches recorded yet.</div>
+                        ) : (
+                          <ul className="space-y-4">
+                            {analytics.topQueries.map((q: any, i: number) => (
+                              <li key={i} className="flex justify-between items-center border-b pb-2 last:border-0">
+                                <span className="font-medium">{q.term}</span>
+                                <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">{q.count}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Zero-Result Queries</CardTitle>
+                        <CardDescription>Searches that returned no results</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {analytics.zeroQueries.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">No zero-result searches.</div>
+                        ) : (
+                          <ul className="space-y-4">
+                            {analytics.zeroQueries.map((q: any, i: number) => (
+                              <li key={i} className="flex justify-between items-center border-b pb-2 last:border-0">
+                                <span className="font-medium">{q.term}</span>
+                                <span className="text-sm bg-destructive/10 text-destructive px-2 py-1 rounded-full">{q.count}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-muted-foreground">Failed to load analytics.</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
