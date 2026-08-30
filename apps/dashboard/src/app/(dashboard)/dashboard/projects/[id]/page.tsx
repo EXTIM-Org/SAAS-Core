@@ -28,7 +28,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { ArrowLeft, Trash2, Package, ChevronLeft, ChevronRight, RefreshCw, Save } from 'lucide-react';
+import { ArrowLeft, Trash2, Package, ChevronLeft, ChevronRight, RefreshCw, Save, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
 
 interface Project {
@@ -67,6 +67,14 @@ export default function ProjectDetailsPage() {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [isClearingQueue, setIsClearingQueue] = useState(false);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopySnippet = () => {
+    navigator.clipboard.writeText(`<div id="saas-search-widget" data-project-id="${projectId}" data-api-url="http://localhost:4001"></div>\n<script src="http://localhost:3001/widget.js" defer></script>`);
+    setIsCopied(true);
+    toast.success('Snippet copied to clipboard!');
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   useEffect(() => {
     async function fetchInitialData() {
@@ -519,19 +527,16 @@ export default function ProjectDetailsPage() {
         </CardHeader>
         <CardContent>
           <div className="relative group">
-            <div className="bg-muted p-4 rounded-md font-mono text-sm overflow-x-auto whitespace-pre">
+            <div className="bg-muted p-4 pr-16 rounded-md font-mono text-sm overflow-x-auto whitespace-pre">
               {`<div id="saas-search-widget" data-project-id="${projectId}" data-api-url="http://localhost:4001"></div>\n<script src="http://localhost:3001/widget.js" defer></script>`}
             </div>
             <Button
               variant="secondary"
-              size="sm"
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => {
-                navigator.clipboard.writeText(`<div id="saas-search-widget" data-project-id="${projectId}" data-api-url="http://localhost:4001"></div>\n<script src="http://localhost:3001/widget.js" defer></script>`);
-                toast.success('Snippet copied to clipboard!');
-              }}
+              size="icon"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary/80"
+              onClick={handleCopySnippet}
             >
-              Copy
+              {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-4">

@@ -43,4 +43,29 @@ export class CoreApiClientService {
       return false;
     }
   }
+
+  async validateSuperAdmin(authHeader?: string): Promise<boolean> {
+    const apiUrl =
+      this.configService.get<string>('API_URL') || 'http://localhost:4000';
+
+    if (!authHeader) return false;
+
+    try {
+      const headers = { Authorization: authHeader };
+      const response = await lastValueFrom(
+        this.httpService
+          .get(`${apiUrl}/admin/health`, { headers })
+          .pipe(
+            catchError((err: Error) => {
+              this.logger.error(`Failed to validate SUPER_ADMIN: ${err.message}`);
+              throw err;
+            }),
+          ),
+      );
+
+      return response.data?.role === 'SUPER_ADMIN';
+    } catch {
+      return false;
+    }
+  }
 }

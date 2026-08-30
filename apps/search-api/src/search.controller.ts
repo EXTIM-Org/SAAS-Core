@@ -19,12 +19,139 @@ import Redis from 'ioredis';
 
 @Controller('search')
 export class SearchController {
+  private readonly redisClient: Redis;
+
   constructor(
     private readonly coreApiClientService: CoreApiClientService,
     private readonly prisma: PrismaService,
     @Inject('TYPESENSE_CLIENT') private readonly typesenseClient: Client,
     @InjectQueue('crawl-queue') private readonly crawlQueue: Queue,
-  ) {}
+  ) {
+    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+    this.redisClient = new Redis(redisUrl, { maxRetriesPerRequest: null });
+  }
+
+  @Get('admin/stats')
+  async getAdminStats(@Headers('authorization') authorization?: string) {
+    const isSuperAdmin = await this.coreApiClientService.validateSuperAdmin(authorization);
+    if (!isSuperAdmin) {
+      throw new NotFoundException('Unauthorized');
+    }
+
+    try {
+      // Get BullMQ queue stats and latest failed jobs
+      const queueCounts = await this.crawlQueue.getJobCounts();
+      const rawFailedJobs = await this.crawlQueue.getFailed(0, 10);
+      const failedJobs = rawFailedJobs.map(job => ({
+        id: job.id,
+        projectId: job.data?.projectId,
+        domain: job.data?.domain,
+        url: job.data?.url,
+        failedReason: job.failedReason,
+        timestamp: job.timestamp
+      }));
+
+      // Get Typesense collection stats
+      let totalDocuments = 0;
+      let typesenseHealthy = false;
+      try {
+        const health = await this.typesenseClient.health.retrieve();
+        typesenseHealthy = health.ok;
+        const collection = await this.typesenseClient.collections('documents').retrieve();
+        totalDocuments = collection.num_documents || 0;
+      } catch (err) {
+        console.error('Failed to retrieve typesense stats:', err);
+      }
+
+      // Get Worker System Stats and Analytics from Redis
+      let workerResources = { cpu: 0, memory: 0 };
+      let totalSearchesToday = 0;
+      let searchLatencyMs = 0;
+      
+      try {
+        const rawWorkerStats = await this.redisClient.get('worker:system:stats');
+        if (rawWorkerStats) {
+          workerResources = JSON.parse(rawWorkerStats);
+        }
+        
+        const searches = await this.redisClient.get('search_count:today');
+        if (searches) {
+          totalSearchesToday = parseInt(searches, 10);
+        }
+      } catch (err) {
+        console.error('Failed to retrieve stats from Redis:', err);
+      }
+
+      // Fetch Typesense Latency (from /stats.json) and Top Tenants
+      let topTenants: any[] = [];
+      try {
+        const node = this.typesenseClient.configuration.nodes[0] as any;
+        const typesenseUrl = node.url || `${node.protocol}://${node.host}:${node.port}`;
+        const apiKey = this.typesenseClient.configuration.apiKey;
+        const res = await fetch(`${typesenseUrl}/stats.json`, {
+          headers: { 'X-TYPESENSE-API-KEY': apiKey }
+        });
+        const statsData = await res.json();
+        if (statsData && typeof statsData.search_latency_ms === 'number') {
+          searchLatencyMs = statsData.search_latency_ms;
+        }
+
+        // Top Tenants (Indexed Docs)
+        const facetResults = await this.typesenseClient.collections('documents').documents().search({
+          q: '*',
+          facet_by: 'projectId',
+          max_facet_values: 5,
+          per_page: 0
+        });
+        
+        const projectCounts = facetResults.facet_counts?.find(f => f.field_name === 'projectId')?.counts || [];
+        
+        if (projectCounts.length > 0) {
+          const projectIds = projectCounts.map(c => c.value);
+          const projects = await this.prisma.project.findMany({
+            where: { id: { in: projectIds } },
+            select: { id: true, name: true }
+          });
+          
+          topTenants = projectCounts.map(c => {
+            const proj = projects.find(p => p.id === c.value);
+            return {
+              projectId: c.value,
+              name: proj ? proj.name : 'Unknown Project',
+              count: c.count
+            };
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch typesense analytics or facets:', err);
+      }
+
+      return {
+        success: true,
+        queue: {
+          waiting: queueCounts.waiting || 0,
+          active: queueCounts.active || 0,
+          failed: queueCounts.failed || 0,
+          completed: queueCounts.completed || 0,
+          delayed: queueCounts.delayed || 0,
+        },
+        typesense: {
+          healthy: typesenseHealthy,
+          totalDocuments,
+        },
+        workerResources,
+        analytics: {
+          latency: searchLatencyMs,
+          totalSearches: totalSearchesToday
+        },
+        topTenants,
+        failedJobs
+      };
+    } catch (error) {
+      console.error('Error fetching search admin stats:', error);
+      throw new NotFoundException('Failed to fetch search stats');
+    }
+  }
 
   @Get('public/:projectId/search')
   async publicSearch(
@@ -45,6 +172,18 @@ export class SearchController {
           filter_by: `projectId:=${projectId}`,
           per_page: 5, // Keep widget results concise
         });
+
+      // Track search
+      try {
+        await this.redisClient.incr('search_count:today');
+        // Set expiry to midnight UTC if it's newly created
+        const ttl = await this.redisClient.ttl('search_count:today');
+        if (ttl === -1) {
+          const now = new Date();
+          const nextMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+          await this.redisClient.expireat('search_count:today', Math.floor(nextMidnight.getTime() / 1000));
+        }
+      } catch (e) {}
 
       return searchResults.hits?.map((hit) => hit.document) || [];
     } catch (error) {
@@ -82,6 +221,17 @@ export class SearchController {
         query_by: 'title,content',
         filter_by: `projectId:=${projectId}`,
       });
+
+    // Track search
+    try {
+      await this.redisClient.incr('search_count:today');
+      const ttl = await this.redisClient.ttl('search_count:today');
+      if (ttl === -1) {
+        const now = new Date();
+        const nextMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+        await this.redisClient.expireat('search_count:today', Math.floor(nextMidnight.getTime() / 1000));
+      }
+    } catch (e) {}
 
     return searchResults.hits?.map((hit) => hit.document) || [];
   }
@@ -324,6 +474,10 @@ export class SearchController {
         if (keys.length > 0) {
           await redis.del(...keys);
         }
+        
+        // Signal active workers to stop immediately
+        await redis.set(`cancel_crawl:${projectId}`, '1', 'EX', 60);
+
         redis.disconnect();
       } catch (err) {
         console.error('Error clearing Redis cache:', err);
@@ -333,6 +487,31 @@ export class SearchController {
     } catch (error) {
       console.error('Error clearing queue:', error);
       throw new NotFoundException('Failed to clear queue');
+    }
+  }
+
+  @Post('admin/queue/retry/:jobId')
+  async retryFailedJob(
+    @Param('jobId') jobId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const isSuperAdmin = await this.coreApiClientService.validateSuperAdmin(authorization);
+    if (!isSuperAdmin) {
+      throw new NotFoundException('Unauthorized');
+    }
+
+    try {
+      const job = await this.crawlQueue.getJob(jobId);
+      if (!job) {
+        throw new NotFoundException(`Job with ID ${jobId} not found`);
+      }
+      
+      await job.retry();
+      
+      return { success: true, message: `Job ${jobId} is being retried` };
+    } catch (error) {
+      console.error(`Error retrying job ${jobId}:`, error);
+      throw new NotFoundException('Failed to retry job');
     }
   }
 }

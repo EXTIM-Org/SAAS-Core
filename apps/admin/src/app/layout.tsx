@@ -1,15 +1,11 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Vazirmatn } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const vazirmatn = Vazirmatn({
+  variable: '--font-sans',
+  subsets: ['latin', 'arabic'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -20,6 +16,8 @@ export const metadata: Metadata = {
 import { Toaster } from '@/components/ui/sonner';
 import { PostHogProvider } from '@/providers/posthog-provider';
 
+import { ThemeProvider } from '@/components/theme-provider';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,13 +26,21 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${vazirmatn.variable} font-sans h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <PostHogProvider>
-          {children}
-          <Toaster />
-        </PostHogProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <PostHogProvider>
+            {children}
+            <Toaster />
+          </PostHogProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

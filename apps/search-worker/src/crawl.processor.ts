@@ -80,6 +80,13 @@ export class CrawlProcessor extends WorkerHost {
       throw new Error('Missing url or domain');
     }
 
+    // Check if crawl for this project was cancelled
+    const isCancelled = await this.redisClient.get(`cancel_crawl:${projectId}`);
+    if (isCancelled) {
+      this.logger.warn(`Job ${job.id} aborted because crawl for project ${projectId} was cancelled.`);
+      return;
+    }
+
     const visitedKey = `visited:${projectId}`;
 
     // Mark current URL as visited to prevent duplicate crawling
@@ -169,6 +176,13 @@ export class CrawlProcessor extends WorkerHost {
           }
         });
 
+        // Check cancellation before pushing XML links
+        const cancelCheckXml = await this.redisClient.get(`cancel_crawl:${projectId}`);
+        if (cancelCheckXml) {
+           this.logger.warn(`Aborting sitemap enqueue for project ${projectId} due to cancellation.`);
+           return;
+        }
+
         let enqueuedCount = 0;
         for (const link of links) {
           const added = await this.redisClient.sadd(visitedKey, link);
@@ -222,6 +236,13 @@ export class CrawlProcessor extends WorkerHost {
             // Ignore invalid URLs
           }
         });
+
+        // Check cancellation before pushing HTML links
+        const cancelCheckHtml = await this.redisClient.get(`cancel_crawl:${projectId}`);
+        if (cancelCheckHtml) {
+           this.logger.warn(`Aborting link enqueue for project ${projectId} due to cancellation.`);
+           return;
+        }
 
         // Enqueue new unvisited links
         for (const link of links) {

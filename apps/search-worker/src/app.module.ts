@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { HttpModule } from '@nestjs/axios';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { CrawlProcessor } from './crawl.processor';
 import { TypesenseSchemaService } from './typesense-schema.service';
+import { SystemMonitorService } from './system-monitor.service';
 
 @Module({
   imports: [
@@ -12,6 +14,7 @@ import { TypesenseSchemaService } from './typesense-schema.service';
       isGlobal: true,
       envFilePath: '../../.env',
     }),
+    ScheduleModule.forRoot(),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -40,6 +43,7 @@ import { TypesenseSchemaService } from './typesense-schema.service';
   providers: [
     CrawlProcessor,
     TypesenseSchemaService,
+    SystemMonitorService,
     {
       provide: 'TYPESENSE_CLIENT',
       useFactory: async (configService: ConfigService) => {
