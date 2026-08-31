@@ -815,11 +815,11 @@ export default function ProjectDetailsPage() {
 
       {/* Products Tab */}
       {activeTab === 'products' && (
-        <Card className="shadow-sm mt-8 border-gray-100 dark:border-gray-800 dark:bg-gray-900/50">
-          <CardHeader className="flex flex-row items-center justify-between bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+        <Card className="shadow-sm mt-8 border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between bg-muted/50 border-b border-border">
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
-                <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <Package className="w-5 h-5 text-primary" />
                 Indexed Products
               </CardTitle>
               <CardDescription>
@@ -839,21 +839,21 @@ export default function ProjectDetailsPage() {
           <CardContent className="p-0">
             {isLoadingProducts && indexedProducts.length === 0 ? (
               <div className="flex justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : indexedProducts.length === 0 ? (
-              <div className="text-center p-8 text-gray-500 dark:text-gray-400 bg-gray-50/30 dark:bg-gray-800/20">
-                <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                <p className="font-medium text-gray-600 dark:text-gray-300">No products found</p>
+              <div className="text-center p-8 text-muted-foreground bg-muted/20">
+                <Package className="w-12 h-12 text-muted mx-auto mb-3" />
+                <p className="font-medium text-foreground">No products found</p>
                 <p className="text-sm mt-1">The crawler hasn't found any valid e-commerce products yet.</p>
               </div>
             ) : (
-              <div className="bg-gray-50/20 dark:bg-gray-900/20">
+              <div className="bg-muted/10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
                   {indexedProducts.map((product) => (
-                    <div key={product.id} className="group flex flex-col bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-900/5 dark:hover:shadow-blue-900/20 transition-all duration-300 overflow-hidden">
+                    <div key={product.id} className="group flex flex-col bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 overflow-hidden">
                       {/* Image Area */}
-                      <div className="relative aspect-square bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 overflow-hidden flex items-center justify-center p-6">
+                      <div className="relative aspect-square bg-card border-b border-border overflow-hidden flex items-center justify-center p-6">
                         {product.image_url ? (
                           <img 
                             src={product.image_url} 
@@ -861,37 +861,35 @@ export default function ProjectDetailsPage() {
                             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
                           />
                         ) : (
-                          <Package className="w-16 h-16 text-gray-200 dark:text-gray-700" />
+                          <Package className="w-16 h-16 text-muted-foreground/30" />
                         )}
                         
                         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm ${product.in_stock === false ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50'}`}>
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm ${product.in_stock === false ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}`}>
                             {product.in_stock === false ? 'Out of Stock' : 'In Stock'}
                           </span>
                         </div>
-                        
-
                       </div>
                       
                       {/* Content Area */}
                       <div className="p-5 flex flex-col flex-1">
                         {product.brand && (
-                          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1.5 uppercase tracking-wide">{product.brand}</span>
+                          <span className="text-xs font-semibold text-primary mb-1.5 uppercase tracking-wide">{product.brand}</span>
                         )}
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2 leading-snug mb-3 flex-1" title={product.title}>
+                        <h4 className="font-medium text-foreground text-sm line-clamp-2 leading-snug mb-3 flex-1" title={product.title}>
                           {product.title}
                         </h4>
                         
-                        <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-800 flex items-end justify-between gap-2">
+                        <div className="mt-auto pt-3 border-t border-border flex items-end justify-between gap-2">
                           <div>
-                            <div className="text-[10px] text-gray-500 dark:text-gray-400 font-medium mb-0.5">Price</div>
-                            <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                            <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Price</div>
+                            <div className="text-sm font-bold text-foreground">
                               {product.price ? (
                                 <>
-                                  {product.price.toLocaleString()} <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-0.5">{product.currency || 'Toman'}</span>
+                                  {product.price.toLocaleString()} <span className="text-xs font-normal text-muted-foreground ml-0.5">{product.currency || 'Toman'}</span>
                                 </>
                               ) : (
-                                <span className="text-gray-400 dark:text-gray-500 font-normal">Contact for price</span>
+                                <span className="text-muted-foreground font-normal">Contact for price</span>
                               )}
                             </div>
                           </div>
@@ -899,7 +897,7 @@ export default function ProjectDetailsPage() {
                             href={product.url} 
                             target="_blank" 
                             rel="noreferrer" 
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
                             title="View original product"
                           >
                             <ExternalLink className="w-4 h-4" />
@@ -912,8 +910,8 @@ export default function ProjectDetailsPage() {
 
                 {/* Pagination */}
                 {productsTotalPages > 1 && (
-                  <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
+                    <span className="text-sm text-muted-foreground">
                       Page {productsPage} of {productsTotalPages}
                     </span>
                     <div className="flex gap-2">
