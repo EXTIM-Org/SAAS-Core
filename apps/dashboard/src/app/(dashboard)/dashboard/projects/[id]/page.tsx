@@ -870,25 +870,7 @@ export default function ProjectDetailsPage() {
                           </span>
                         </div>
                         
-                        <div className="absolute top-3 left-3">
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-8 w-8 rounded-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleDeleteProduct(product.id);
-                            }}
-                            disabled={isDeletingProduct === product.id}
-                            title="Delete product"
-                          >
-                            {isDeletingProduct === product.id ? (
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
-                          </Button>
-                        </div>
+
                       </div>
                       
                       {/* Content Area */}
