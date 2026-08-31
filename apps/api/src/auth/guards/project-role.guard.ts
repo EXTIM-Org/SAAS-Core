@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ProjectRole, GlobalRole } from '@saas/database';
 import { PROJECT_ROLES_KEY } from '../decorators/project-roles.decorator';
@@ -6,14 +11,17 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ProjectRoleGuard implements CanActivate {
-  constructor(private reflector: Reflector, private prisma: PrismaService) {}
+  constructor(
+    private reflector: Reflector,
+    private prisma: PrismaService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.getAllAndOverride<ProjectRole[]>(PROJECT_ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    
+    const requiredRoles = this.reflector.getAllAndOverride<ProjectRole[]>(
+      PROJECT_ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
     // If no project roles are required, allow access
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
@@ -21,7 +29,7 @@ export class ProjectRoleGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    
+
     if (!user) {
       return false;
     }
@@ -32,10 +40,16 @@ export class ProjectRoleGuard implements CanActivate {
     }
 
     // Find the projectId in the request params, query, or body
-    const projectId = request.params.projectId || request.params.id || request.body.projectId || request.query.projectId;
+    const projectId =
+      request.params.projectId ||
+      request.params.id ||
+      request.body.projectId ||
+      request.query.projectId;
 
     if (!projectId) {
-      throw new ForbiddenException('Project ID is required to access this resource');
+      throw new ForbiddenException(
+        'Project ID is required to access this resource',
+      );
     }
 
     // Find the user's role in this project
@@ -44,8 +58,8 @@ export class ProjectRoleGuard implements CanActivate {
         userId_projectId: {
           userId: user.userId,
           projectId: projectId,
-        }
-      }
+        },
+      },
     });
 
     if (!member) {
@@ -53,7 +67,9 @@ export class ProjectRoleGuard implements CanActivate {
     }
 
     if (!requiredRoles.includes(member.role)) {
-      throw new ForbiddenException(`Requires one of the following project roles: ${requiredRoles.join(', ')}`);
+      throw new ForbiddenException(
+        `Requires one of the following project roles: ${requiredRoles.join(', ')}`,
+      );
     }
 
     return true;

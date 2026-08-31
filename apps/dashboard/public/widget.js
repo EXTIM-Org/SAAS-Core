@@ -12,7 +12,9 @@
   function initWidget() {
     const container = document.getElementById(WIDGET_CONTAINER_ID);
     if (!container) {
-      console.warn(`Search Widget: Container with id "${WIDGET_CONTAINER_ID}" not found.`);
+      console.warn(
+        `Search Widget: Container with id "${WIDGET_CONTAINER_ID}" not found.`,
+      );
       return;
     }
 
@@ -27,8 +29,10 @@
       API_URL = customApiUrl;
     }
 
+    const mode = container.getAttribute('data-mode') || 'document'; // 'document' or 'ecommerce'
+
     injectCSS();
-    renderUI(container, projectId);
+    renderUI(container, projectId, mode);
   }
 
   function injectCSS() {
@@ -230,6 +234,66 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
+      
+      /* Ecommerce Grid */
+      .saas-ecommerce-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        padding: 0 16px;
+      }
+      .saas-product-card {
+        background: rgba(128, 128, 128, 0.05);
+        border: 1px solid var(--saas-border-glass);
+        border-radius: var(--saas-radius);
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        transition: var(--saas-transition);
+        display: flex;
+        flex-direction: column;
+      }
+      .saas-product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: var(--saas-primary);
+      }
+      .saas-product-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        background: #f3f4f6;
+      }
+      .saas-product-details {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+      .saas-product-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: var(--saas-text-main);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .saas-product-price {
+        color: var(--saas-primary);
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-top: auto;
+      }
+      .saas-product-stock {
+        font-size: 0.75rem;
+        margin-top: 4px;
+        color: #10b981;
+      }
+      .saas-product-out {
+        color: #ef4444;
+      }
 
       .saas-empty-state {
         padding: 32px 24px;
@@ -263,7 +327,7 @@
     document.head.appendChild(style);
   }
 
-  function renderUI(container, projectId) {
+  function renderUI(container, projectId, mode) {
     const root = document.createElement('div');
     root.id = 'saas-widget-root';
 
@@ -300,7 +364,7 @@
     input.type = 'text';
     input.className = 'saas-search-input';
     input.placeholder = 'Search docs, articles, content...';
-    
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'saas-close-btn';
     closeBtn.innerHTML = `
@@ -316,7 +380,7 @@
     // Results
     const resultsContainer = document.createElement('div');
     resultsContainer.className = 'saas-results-container';
-    
+
     const footer = document.createElement('div');
     footer.className = 'saas-footer';
     footer.innerHTML = 'Powered by <strong>Search SAAS</strong>';
@@ -359,9 +423,9 @@
     let debounceTimer;
     input.addEventListener('input', (e) => {
       const query = e.target.value.trim();
-      
+
       clearTimeout(debounceTimer);
-      
+
       if (!query) {
         renderEmptyState('Type to start searching...');
         return;
@@ -375,7 +439,7 @@
       `;
 
       debounceTimer = setTimeout(() => {
-        performSearch(projectId, query, resultsContainer);
+        performSearch(projectId, query, resultsContainer, mode);
       }, 300);
     });
 
@@ -387,29 +451,70 @@
     }
   }
 
-  async function performSearch(projectId, query, container) {
+  async function performSearch(projectId, query, container, mode) {
     try {
-      const res = await fetch(`${API_URL}/search/public/${projectId}/search?q=${encodeURIComponent(query)}`);
+      let endpoint = `${API_URL}/search/public/${projectId}/search?q=${encodeURIComponent(query)}`;
+      if (mode === 'ecommerce') {
+        endpoint = `${API_URL}/search/public/${projectId}/products/search?q=${encodeURIComponent(query)}`;
+      }
+
+      const res = await fetch(endpoint);
       if (!res.ok) throw new Error('Search failed');
-      const results = await res.json();
+
+      let results = await res.json();
+
+      // The ecommerce endpoint returns { results: [], facets: [] }
+      if (mode === 'ecommerce') {
+        results = results.results || [];
+      }
 
       if (results.length === 0) {
-        container.innerHTML = '<div class="saas-empty-state">No results found.</div>';
+        container.innerHTML =
+          '<div class="saas-empty-state">No results found.</div>';
         return;
       }
 
-      container.innerHTML = results.map(item => `
-        <a href="${item.url}" class="saas-result-item" target="_blank" rel="noopener noreferrer">
-          <h4 class="saas-result-title">${item.title || item.url}</h4>
-          <p class="saas-result-url">${item.url}</p>
-          <p class="saas-result-snippet">${item.content || item.snippet || ''}</p>
-        </a>
-      `).join('');
-
+      if (mode === 'ecommerce') {
+        container.innerHTML = `
+          <div class="saas-ecommerce-grid">
+            ${results
+              .map(
+                (item) => `
+              <a href="${item.url}" class="saas-product-card" target="_blank" rel="noopener noreferrer">
+                ${item.image_url ? `<img src="${item.image_url}" class="saas-product-image" alt="${item.title}">` : '<div class="saas-product-image" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.8rem;">No Image</div>'}
+                <div class="saas-product-details">
+                  <h4 class="saas-product-title">${item.title || item.url}</h4>
+                  ${item.brand ? `<span style="font-size:0.75rem; color:var(--saas-text-muted);">${item.brand}</span>` : ''}
+                  <div class="saas-product-price">
+                    ${item.price ? `${item.price.toLocaleString()} ${item.currency || 'Toman'}` : 'Contact for Price'}
+                  </div>
+                  <div class="saas-product-stock ${item.in_stock === false ? 'saas-product-out' : ''}">
+                    ${item.in_stock === false ? 'Out of Stock' : 'In Stock'}
+                  </div>
+                </div>
+              </a>
+            `,
+              )
+              .join('')}
+          </div>
+        `;
+      } else {
+        container.innerHTML = results
+          .map(
+            (item) => `
+          <a href="${item.url}" class="saas-result-item" target="_blank" rel="noopener noreferrer">
+            <h4 class="saas-result-title">${item.title || item.url}</h4>
+            <p class="saas-result-url">${item.url}</p>
+            <p class="saas-result-snippet">${item.content || item.snippet || ''}</p>
+          </a>
+        `,
+          )
+          .join('');
+      }
     } catch (error) {
       console.error('Widget search error:', error);
-      container.innerHTML = '<div class="saas-empty-state">An error occurred while searching.</div>';
+      container.innerHTML =
+        '<div class="saas-empty-state">An error occurred while searching.</div>';
     }
   }
-
 })();

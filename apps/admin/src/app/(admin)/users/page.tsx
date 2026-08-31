@@ -11,9 +11,14 @@ export default async function UsersPage() {
         <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
       </div>
 
-      <div className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 mb-4" role="alert">
+      <div
+        className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 mb-4"
+        role="alert"
+      >
         <p className="font-bold">Danger Zone</p>
-        <p>Promoting a user to SUPER_ADMIN grants them full access to this panel.</p>
+        <p>
+          Promoting a user to SUPER_ADMIN grants them full access to this panel.
+        </p>
       </div>
 
       {error ? (

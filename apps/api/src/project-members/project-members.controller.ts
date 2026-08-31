@@ -1,5 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ProjectMembersService } from './project-members.service';
 import { AddMemberDto } from './dto/add-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
@@ -16,7 +31,12 @@ export class ProjectMembersController {
   constructor(private readonly membersService: ProjectMembersService) {}
 
   @Get()
-  @ProjectRoles(ProjectRole.OWNER, ProjectRole.ADMIN, ProjectRole.EDITOR, ProjectRole.VIEWER)
+  @ProjectRoles(
+    ProjectRole.OWNER,
+    ProjectRole.ADMIN,
+    ProjectRole.EDITOR,
+    ProjectRole.VIEWER,
+  )
   @ApiOperation({ summary: 'Get all members of a project' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   findAll(@Param('projectId') projectId: string) {

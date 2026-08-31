@@ -15,11 +15,9 @@ describe('SearchController', () => {
     typesenseClientMock = {
       collections: jest.fn().mockReturnValue({
         documents: jest.fn().mockReturnValue({
-          search: jest
-            .fn()
-            .mockResolvedValue({
-              hits: [{ document: { id: '1', title: 'Test' } }],
-            }),
+          search: jest.fn().mockResolvedValue({
+            hits: [{ document: { id: '1', title: 'Test' } }],
+          }),
         }),
       }),
     };

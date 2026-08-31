@@ -40,7 +40,7 @@ export function CartDrawer({
 }: CartDrawerProps) {
   const total = items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
-    0
+    0,
   );
 
   return (
@@ -76,7 +76,10 @@ export function CartDrawer({
                         </span>
                       </div>
                       <div className="font-bold text-lg whitespace-nowrap">
-                        ${((item.product.price * item.quantity) / 100).toFixed(2)}
+                        $
+                        {((item.product.price * item.quantity) / 100).toFixed(
+                          2,
+                        )}
                       </div>
                     </div>
 

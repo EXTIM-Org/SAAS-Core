@@ -14,7 +14,11 @@ export async function getProjectMembers(projectId: string) {
   return response.json();
 }
 
-export async function addProjectMember(projectId: string, email: string, role: ProjectRole) {
+export async function addProjectMember(
+  projectId: string,
+  email: string,
+  role: ProjectRole,
+) {
   const response = await fetchWithAuth(`/projects/${projectId}/members`, {
     method: 'POST',
     body: JSON.stringify({ email, role }),
@@ -28,11 +32,18 @@ export async function addProjectMember(projectId: string, email: string, role: P
   return { success: true, data: await response.json() };
 }
 
-export async function updateProjectMemberRole(projectId: string, memberId: string, role: ProjectRole) {
-  const response = await fetchWithAuth(`/projects/${projectId}/members/${memberId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ role }),
-  });
+export async function updateProjectMemberRole(
+  projectId: string,
+  memberId: string,
+  role: ProjectRole,
+) {
+  const response = await fetchWithAuth(
+    `/projects/${projectId}/members/${memberId}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    },
+  );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -43,9 +54,12 @@ export async function updateProjectMemberRole(projectId: string, memberId: strin
 }
 
 export async function removeProjectMember(projectId: string, memberId: string) {
-  const response = await fetchWithAuth(`/projects/${projectId}/members/${memberId}`, {
-    method: 'DELETE',
-  });
+  const response = await fetchWithAuth(
+    `/projects/${projectId}/members/${memberId}`,
+    {
+      method: 'DELETE',
+    },
+  );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

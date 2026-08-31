@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddMemberDto } from './dto/add-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
@@ -15,28 +20,30 @@ export class ProjectMembersService {
           select: {
             id: true,
             email: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
   }
 
   async addMember(addMemberDto: AddMemberDto) {
     const user = await this.prisma.user.findUnique({
-      where: { email: addMemberDto.email }
+      where: { email: addMemberDto.email },
     });
 
     if (!user) {
-      throw new NotFoundException(`User with email ${addMemberDto.email} not found`);
+      throw new NotFoundException(
+        `User with email ${addMemberDto.email} not found`,
+      );
     }
 
     const existing = await this.prisma.projectMember.findUnique({
       where: {
         userId_projectId: {
           userId: user.id,
-          projectId: addMemberDto.projectId
-        }
-      }
+          projectId: addMemberDto.projectId,
+        },
+      },
     });
 
     if (existing) {
@@ -48,13 +55,17 @@ export class ProjectMembersService {
         projectId: addMemberDto.projectId,
         userId: user.id,
         role: addMemberDto.role,
-      }
+      },
     });
   }
 
-  async updateMemberRole(projectId: string, memberId: string, updateDto: UpdateMemberDto) {
+  async updateMemberRole(
+    projectId: string,
+    memberId: string,
+    updateDto: UpdateMemberDto,
+  ) {
     const member = await this.prisma.projectMember.findFirst({
-      where: { id: memberId, projectId }
+      where: { id: memberId, projectId },
     });
 
     if (!member) {
@@ -64,22 +75,24 @@ export class ProjectMembersService {
     // Prevent removing the last owner if we were to implement that, but for now just update
     if (member.role === 'OWNER' && updateDto.role !== 'OWNER') {
       const ownersCount = await this.prisma.projectMember.count({
-        where: { projectId, role: 'OWNER' }
+        where: { projectId, role: 'OWNER' },
       });
       if (ownersCount <= 1) {
-        throw new BadRequestException('Cannot change the role of the last OWNER');
+        throw new BadRequestException(
+          'Cannot change the role of the last OWNER',
+        );
       }
     }
 
     return this.prisma.projectMember.update({
       where: { id: memberId },
-      data: { role: updateDto.role }
+      data: { role: updateDto.role },
     });
   }
 
   async removeMember(projectId: string, memberId: string) {
     const member = await this.prisma.projectMember.findFirst({
-      where: { id: memberId, projectId }
+      where: { id: memberId, projectId },
     });
 
     if (!member) {
@@ -88,7 +101,7 @@ export class ProjectMembersService {
 
     if (member.role === 'OWNER') {
       const ownersCount = await this.prisma.projectMember.count({
-        where: { projectId, role: 'OWNER' }
+        where: { projectId, role: 'OWNER' },
       });
       if (ownersCount <= 1) {
         throw new BadRequestException('Cannot remove the last OWNER');
@@ -96,7 +109,7 @@ export class ProjectMembersService {
     }
 
     return this.prisma.projectMember.delete({
-      where: { id: memberId }
+      where: { id: memberId },
     });
   }
 }

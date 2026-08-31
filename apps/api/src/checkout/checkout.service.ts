@@ -92,7 +92,9 @@ export class CheckoutService {
       });
 
       if (!user) {
-        this.logger.warn(`User not found for invoice email (userId: ${userId})`);
+        this.logger.warn(
+          `User not found for invoice email (userId: ${userId})`,
+        );
         return;
       }
 

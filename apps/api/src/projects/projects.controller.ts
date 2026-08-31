@@ -59,7 +59,10 @@ export class ProjectsController {
     status: 404,
     description: 'Project not found or unauthorized.',
   })
-  findOne(@CurrentUser() user: { userId: string; role: string }, @Param('id') id: string) {
+  findOne(
+    @CurrentUser() user: { userId: string; role: string },
+    @Param('id') id: string,
+  ) {
     return this.projectsService.findOne(user, id);
   }
 
@@ -91,7 +94,10 @@ export class ProjectsController {
     status: 404,
     description: 'Project not found or unauthorized.',
   })
-  remove(@CurrentUser() user: { userId: string; role: string }, @Param('id') id: string) {
+  remove(
+    @CurrentUser() user: { userId: string; role: string },
+    @Param('id') id: string,
+  ) {
     return this.projectsService.remove(user, id);
   }
 }

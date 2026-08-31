@@ -10,60 +10,83 @@ export class TypesenseSchemaService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const collections = [
-      {
-        name: 'documents',
-        fields: [
-          { name: 'id', type: 'string' },
-          { name: 'projectId', type: 'string', facet: true },
-          { name: 'domain', type: 'string' },
-          { name: 'url', type: 'string' },
-          { name: 'title', type: 'string' },
-          { name: 'content', type: 'string' },
-        ],
-      },
-      {
-        name: 'products',
-        fields: [
-          { name: 'id', type: 'string' },
-          { name: 'projectId', type: 'string', facet: true },
-          { name: 'name', type: 'string' },
-          { name: 'description', type: 'string', optional: true },
-          { name: 'price', type: 'float', optional: true },
-        ],
-      },
-    ];
-
-    for (const collection of collections) {
-      try {
-        await this.typesenseClient.collections(collection.name).retrieve();
+    const collectionName = 'documents';
+    try {
+      await this.typesenseClient.collections(collectionName).retrieve();
+      this.logger.log(
+        `Typesense collection '${collectionName}' already exists.`,
+      );
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'httpStatus' in error &&
+        (error as Record<string, unknown>).httpStatus === 404
+      ) {
         this.logger.log(
-          `Typesense collection '${collection.name}' already exists.`,
+          `Typesense collection '${collectionName}' not found. Creating...`,
         );
-      } catch (error) {
-        if (
-          typeof error === 'object' &&
-          error !== null &&
-          'httpStatus' in error &&
-          (error as Record<string, unknown>).httpStatus === 404
-        ) {
-          this.logger.log(
-            `Typesense collection '${collection.name}' not found. Creating...`,
-          );
-          await this.typesenseClient.collections().create({
-            name: collection.name,
-            fields:
-              collection.fields as import('typesense/lib/Typesense/Collection').CollectionFieldSchema[],
-          });
-          this.logger.log(
-            `Typesense collection '${collection.name}' created successfully.`,
-          );
-        } else {
-          this.logger.error(
-            `Error checking/creating Typesense collection '${collection.name}'`,
-            error,
-          );
-        }
+        await this.typesenseClient.collections().create({
+          name: collectionName,
+          fields: [
+            { name: 'id', type: 'string' },
+            { name: 'projectId', type: 'string', facet: true },
+            { name: 'domain', type: 'string' },
+            { name: 'url', type: 'string' },
+            { name: 'title', type: 'string' },
+            { name: 'content', type: 'string' },
+          ],
+        });
+        this.logger.log(
+          `Typesense collection '${collectionName}' created successfully.`,
+        );
+      } else {
+        this.logger.error(
+          `Error checking/creating Typesense collection '${collectionName}'`,
+          error,
+        );
+      }
+    }
+
+    const productsCollection = 'products';
+    try {
+      await this.typesenseClient.collections(productsCollection).retrieve();
+      this.logger.log(
+        `Typesense collection '${productsCollection}' already exists.`,
+      );
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'httpStatus' in error &&
+        (error as Record<string, unknown>).httpStatus === 404
+      ) {
+        this.logger.log(
+          `Typesense collection '${productsCollection}' not found. Creating...`,
+        );
+        await this.typesenseClient.collections().create({
+          name: productsCollection,
+          fields: [
+            { name: 'id', type: 'string' },
+            { name: 'projectId', type: 'string', facet: true },
+            { name: 'title', type: 'string' },
+            { name: 'description', type: 'string', optional: true },
+            { name: 'url', type: 'string' },
+            { name: 'image_url', type: 'string', optional: true },
+            { name: 'price', type: 'float', facet: true, optional: true },
+            { name: 'currency', type: 'string', facet: true, optional: true },
+            { name: 'in_stock', type: 'bool', facet: true, optional: true },
+            { name: 'brand', type: 'string', facet: true, optional: true },
+          ],
+        });
+        this.logger.log(
+          `Typesense collection '${productsCollection}' created successfully.`,
+        );
+      } else {
+        this.logger.error(
+          `Error checking/creating Typesense collection '${productsCollection}'`,
+          error,
+        );
       }
     }
   }

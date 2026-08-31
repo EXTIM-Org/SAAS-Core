@@ -47,7 +47,7 @@ export async function createProductAction(
     price: number;
     inventoryCount: number;
     categoryId?: string;
-  }
+  },
 ) {
   const response = await fetch(`${API_URL}/products`, {
     method: 'POST',

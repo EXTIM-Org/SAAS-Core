@@ -31,7 +31,7 @@ export async function getCartAction(projectId: string) {
 export async function addToCartAction(
   projectId: string,
   productId: string,
-  quantity: number = 1
+  quantity: number = 1,
 ) {
   const response = await fetch(`${API_URL}/projects/${projectId}/cart/items`, {
     method: 'POST',
@@ -50,7 +50,7 @@ export async function addToCartAction(
 export async function updateCartItemAction(
   projectId: string,
   itemId: string,
-  quantity: number
+  quantity: number,
 ) {
   const response = await fetch(
     `${API_URL}/projects/${projectId}/cart/items/${itemId}`,
@@ -58,7 +58,7 @@ export async function updateCartItemAction(
       method: 'PATCH',
       headers: await getAuthHeaders(),
       body: JSON.stringify({ quantity }),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -75,7 +75,7 @@ export async function removeCartItemAction(projectId: string, itemId: string) {
     {
       method: 'DELETE',
       headers: await getAuthHeaders(),
-    }
+    },
   );
 
   if (!response.ok) {

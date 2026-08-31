@@ -1,7 +1,13 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUserAction } from '@/app/actions/user';
 import { getAdminStatsAction } from '@/app/actions/admin';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 
 export default async function AdminPage() {
   const user = await getCurrentUserAction();
@@ -28,9 +34,7 @@ export default async function AdminPage() {
             <CardDescription>Registered users</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
-              {stats?.totalUsers ?? '---'}
-            </p>
+            <p className="text-2xl font-bold">{stats?.totalUsers ?? '---'}</p>
           </CardContent>
         </Card>
 
@@ -52,9 +56,7 @@ export default async function AdminPage() {
             <CardDescription>Platform orders</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
-              {stats?.totalOrders ?? '---'}
-            </p>
+            <p className="text-2xl font-bold">{stats?.totalOrders ?? '---'}</p>
           </CardContent>
         </Card>
 
@@ -65,7 +67,12 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {stats?.totalRevenue !== undefined ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(stats.totalRevenue) : '---'}
+              {stats?.totalRevenue !== undefined
+                ? new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  }).format(stats.totalRevenue)
+                : '---'}
             </p>
           </CardContent>
         </Card>

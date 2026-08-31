@@ -1,4 +1,11 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 
 @Catch()
@@ -19,7 +26,10 @@ export class SentryFilter implements ExceptionFilter {
       if (process.env.SENTRY_DSN) {
         Sentry.captureException(exception);
       } else {
-        this.logger.error(`[SentryFilter] Unhandled exception: ${exception}`, (exception as Error)?.stack);
+        this.logger.error(
+          `[SentryFilter] Unhandled exception: ${exception}`,
+          (exception as Error)?.stack,
+        );
       }
     }
 

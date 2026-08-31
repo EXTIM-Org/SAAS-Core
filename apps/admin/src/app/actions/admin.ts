@@ -33,7 +33,7 @@ export async function updateUserRole(userId: string, role: string) {
       method: 'PATCH',
       body: JSON.stringify({ role }),
     });
-    
+
     if (!res.ok) throw new Error('Failed to update role');
     revalidatePath('/users');
     return { data: await res.json() };
@@ -52,13 +52,15 @@ export async function getSystemSettings() {
   }
 }
 
-export async function updateSystemSettings(defaultAutoCrawlIntervalDays: number) {
+export async function updateSystemSettings(
+  defaultAutoCrawlIntervalDays: number,
+) {
   try {
     const res = await fetchWithAuth('/admin/settings', {
       method: 'PATCH',
       body: JSON.stringify({ defaultAutoCrawlIntervalDays }),
     });
-    
+
     if (!res.ok) throw new Error('Failed to update settings');
     revalidatePath('/settings');
     return { data: await res.json() };
@@ -77,13 +79,16 @@ export async function getAdminProjects() {
   }
 }
 
-export async function updateProjectInterval(projectId: string, autoCrawlIntervalDays: number | null) {
+export async function updateProjectInterval(
+  projectId: string,
+  autoCrawlIntervalDays: number | null,
+) {
   try {
     const res = await fetchWithAuth(`/admin/projects/${projectId}`, {
       method: 'PATCH',
       body: JSON.stringify({ autoCrawlIntervalDays }),
     });
-    
+
     if (!res.ok) throw new Error('Failed to update project');
     revalidatePath('/projects');
     return { data: await res.json() };

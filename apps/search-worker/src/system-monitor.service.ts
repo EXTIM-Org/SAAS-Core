@@ -22,7 +22,7 @@ export class SystemMonitorService {
   async handleCron() {
     try {
       const stats = await pidusage(process.pid);
-      
+
       const payload = {
         cpu: stats.cpu, // percentage (from 0 to 100*vcore)
         memory: stats.memory, // bytes
@@ -30,7 +30,12 @@ export class SystemMonitorService {
       };
 
       // Set key with 15 second expiration in case worker dies
-      await this.redis.set('worker:system:stats', JSON.stringify(payload), 'EX', 15);
+      await this.redis.set(
+        'worker:system:stats',
+        JSON.stringify(payload),
+        'EX',
+        15,
+      );
     } catch (err) {
       this.logger.error('Failed to report system stats', err);
     }

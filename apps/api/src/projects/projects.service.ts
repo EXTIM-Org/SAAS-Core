@@ -15,8 +15,8 @@ export class ProjectsService {
           create: {
             userId,
             role: 'OWNER',
-          }
-        }
+          },
+        },
       },
     });
   }
@@ -54,7 +54,11 @@ export class ProjectsService {
     return project;
   }
 
-  async update(user: { userId: string; role?: string }, id: string, updateProjectDto: UpdateProjectDto) {
+  async update(
+    user: { userId: string; role?: string },
+    id: string,
+    updateProjectDto: UpdateProjectDto,
+  ) {
     await this.findOne(user, id); // Ensure project exists and belongs to user
 
     return this.prisma.project.update({

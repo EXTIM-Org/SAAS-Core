@@ -8,7 +8,9 @@ const API_URL =
   process.env.API_URL ||
   'http://localhost:4000';
 
-export async function getCurrentUserAction(): Promise<(UserPayload & { email: string }) | null> {
+export async function getCurrentUserAction(): Promise<
+  (UserPayload & { email: string }) | null
+> {
   const token = (await cookies()).get('token')?.value;
 
   if (!token) {

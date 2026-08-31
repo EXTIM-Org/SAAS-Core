@@ -20,8 +20,10 @@ export class AuthService {
   private async generateTokens(user: any) {
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload);
-    
-    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET') || 'default-refresh-secret';
+
+    const refreshSecret =
+      this.configService.get<string>('JWT_REFRESH_SECRET') ||
+      'default-refresh-secret';
     const refreshToken = this.jwtService.sign(payload, {
       secret: refreshSecret,
       expiresIn: '7d',
@@ -84,20 +86,29 @@ export class AuthService {
     }
 
     try {
-      const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET') || 'default-refresh-secret';
-      const payload = this.jwtService.verify(refreshToken, { secret: refreshSecret });
-      
+      const refreshSecret =
+        this.configService.get<string>('JWT_REFRESH_SECRET') ||
+        'default-refresh-secret';
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: refreshSecret,
+      });
+
       const user = await this.usersService.findByEmail(payload.email);
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
-      const storedRefreshToken = await this.usersService.getRefreshToken(user.id);
+      const storedRefreshToken = await this.usersService.getRefreshToken(
+        user.id,
+      );
       if (!storedRefreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const isRefreshTokenValid = await bcrypt.compare(refreshToken, storedRefreshToken);
+      const isRefreshTokenValid = await bcrypt.compare(
+        refreshToken,
+        storedRefreshToken,
+      );
       if (!isRefreshTokenValid) {
         throw new UnauthorizedException('Invalid refresh token');
       }

@@ -18,7 +18,9 @@ export async function loginAction(data: { email: string; password: string }) {
       },
       body: JSON.stringify(data),
     });
-    console.log(`loginAction Response status: ${response.status} ${response.statusText}`);
+    console.log(
+      `loginAction Response status: ${response.status} ${response.statusText}`,
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -27,7 +29,10 @@ export async function loginAction(data: { email: string; password: string }) {
     }
 
     const result = await response.json();
-    console.log('loginAction Success token length:', result.accessToken?.length);
+    console.log(
+      'loginAction Success token length:',
+      result.accessToken?.length,
+    );
     const token = result.accessToken || result.access_token;
     if (token) {
       (await cookies()).set('token', token, {
@@ -37,7 +42,7 @@ export async function loginAction(data: { email: string; password: string }) {
         path: '/',
       });
     }
-    
+
     if (result.refreshToken) {
       (await cookies()).set('refreshToken', result.refreshToken, {
         httpOnly: true,
@@ -64,7 +69,9 @@ export async function signupAction(data: { email: string; password: string }) {
       },
       body: JSON.stringify(data),
     });
-    console.log(`signupAction Response status: ${response.status} ${response.statusText}`);
+    console.log(
+      `signupAction Response status: ${response.status} ${response.statusText}`,
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -73,7 +80,10 @@ export async function signupAction(data: { email: string; password: string }) {
     }
 
     const result = await response.json();
-    console.log('signupAction Success token length:', result.accessToken?.length);
+    console.log(
+      'signupAction Success token length:',
+      result.accessToken?.length,
+    );
     const token = result.accessToken || result.access_token;
     if (token) {
       (await cookies()).set('token', token, {
@@ -83,7 +93,7 @@ export async function signupAction(data: { email: string; password: string }) {
         path: '/',
       });
     }
-    
+
     if (result.refreshToken) {
       (await cookies()).set('refreshToken', result.refreshToken, {
         httpOnly: true,
@@ -101,13 +111,13 @@ export async function signupAction(data: { email: string; password: string }) {
 
 export async function logoutAction() {
   const token = (await cookies()).get('token')?.value;
-  
+
   if (token) {
     try {
       await fetch(`${API_URL}/auth/logout`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
     } catch (err) {

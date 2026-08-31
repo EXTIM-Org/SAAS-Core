@@ -8,9 +8,5 @@ export default async function DashboardLayout({
 }) {
   const user = await getCurrentUserAction();
 
-  return (
-    <DashboardClientLayout user={user}>
-      {children}
-    </DashboardClientLayout>
-  );
+  return <DashboardClientLayout user={user}>{children}</DashboardClientLayout>;
 }

@@ -25,10 +25,8 @@ export default function AdminLayout({
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-semibold">EXTIM Admin</span>
           </header>
-          
-          <main className="flex-1 relative z-10">
-            {children}
-          </main>
+
+          <main className="flex-1 relative z-10">{children}</main>
         </div>
       </div>
     </div>

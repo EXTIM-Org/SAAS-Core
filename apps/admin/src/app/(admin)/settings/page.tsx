@@ -13,7 +13,9 @@ export default async function SettingsPage() {
       {error ? (
         <div className="text-red-500">Failed to load settings: {error}</div>
       ) : (
-        <SettingsForm initialSettings={settings || { defaultAutoCrawlIntervalDays: 30 }} />
+        <SettingsForm
+          initialSettings={settings || { defaultAutoCrawlIntervalDays: 30 }}
+        />
       )}
     </div>
   );

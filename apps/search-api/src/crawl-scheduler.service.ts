@@ -24,7 +24,9 @@ export class CrawlSchedulerService {
       const globalSetting = await this.prisma.systemSetting.findUnique({
         where: { key: 'defaultAutoCrawlIntervalDays' },
       });
-      const defaultInterval = globalSetting ? parseInt(globalSetting.value) : 30;
+      const defaultInterval = globalSetting
+        ? parseInt(globalSetting.value)
+        : 30;
 
       const domains = await this.prisma.domain.findMany({
         include: {
@@ -34,11 +36,12 @@ export class CrawlSchedulerService {
 
       const now = new Date();
       const domainsToCrawl = domains.filter((domain) => {
-        const interval = domain.project.autoCrawlIntervalDays ?? defaultInterval;
+        const interval =
+          domain.project.autoCrawlIntervalDays ?? defaultInterval;
         if (interval === 0) return false;
-        
+
         if (!domain.lastCrawledAt) return false;
-        
+
         const nextCrawlTime = new Date(domain.lastCrawledAt);
         nextCrawlTime.setDate(nextCrawlTime.getDate() + interval);
         return now >= nextCrawlTime;
@@ -53,14 +56,19 @@ export class CrawlSchedulerService {
 
       const redis = new Redis({
         host: this.configService.get<string>('REDIS_HOST') || '127.0.0.1',
-        port: parseInt(this.configService.get<string>('REDIS_PORT') || '6379', 10),
+        port: parseInt(
+          this.configService.get<string>('REDIS_PORT') || '6379',
+          10,
+        ),
       });
 
       for (const domain of domainsToCrawl) {
         const projectId = domain.projectId;
         const url = `https://${domain.name}`;
-        
-        this.logger.log(`Triggering re-crawl for domain: ${domain.name} (Project: ${projectId})`);
+
+        this.logger.log(
+          `Triggering re-crawl for domain: ${domain.name} (Project: ${projectId})`,
+        );
 
         // 1. Clear Redis caches
         const keys = await redis.keys(`crawled:${projectId}:*`);
@@ -85,7 +93,7 @@ export class CrawlSchedulerService {
 
       redis.disconnect();
     } catch (error) {
-      this.logger.error('Error in crawl scheduler', error);
+      this.logger.error('Error in crawl scheduler:', error instanceof Error ? error.message : error);
     }
   }
 }

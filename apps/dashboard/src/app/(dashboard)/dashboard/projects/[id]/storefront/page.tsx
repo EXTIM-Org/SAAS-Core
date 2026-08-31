@@ -130,7 +130,10 @@ export default function StorefrontPage() {
     }
   };
 
-  const cartItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const cartItemsCount = cartItems.reduce(
+    (acc, item) => acc + item.quantity,
+    0,
+  );
 
   if (isLoading) {
     return (

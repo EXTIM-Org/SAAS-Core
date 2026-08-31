@@ -7,7 +7,7 @@ import {
   getProjectMembers,
   addProjectMember,
   updateProjectMemberRole,
-  removeProjectMember
+  removeProjectMember,
 } from '@/app/actions/project-members';
 import DashboardLoading from '../../../loading';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import { ArrowLeft, Trash2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 
@@ -44,7 +44,7 @@ interface Member {
   user: {
     id: string;
     email: string;
-  }
+  };
 }
 
 export default function ProjectMembersPage() {
@@ -56,7 +56,7 @@ export default function ProjectMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberRole, setNewMemberRole] = useState('VIEWER');
-  
+
   const [error, setError] = useState('');
   const [addError, setAddError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -88,7 +88,11 @@ export default function ProjectMembersPage() {
     setAddError('');
 
     try {
-      const res = await addProjectMember(projectId, newMemberEmail.trim(), newMemberRole as any);
+      const res = await addProjectMember(
+        projectId,
+        newMemberEmail.trim(),
+        newMemberRole as any,
+      );
       if (res.error) {
         setAddError(res.error);
         toast.error(res.error);
@@ -109,12 +113,18 @@ export default function ProjectMembersPage() {
 
   const handleUpdateRole = async (memberId: string, newRole: string) => {
     try {
-      const res = await updateProjectMemberRole(projectId, memberId, newRole as any);
+      const res = await updateProjectMemberRole(
+        projectId,
+        memberId,
+        newRole as any,
+      );
       if (res.error) {
         toast.error(res.error);
       } else {
         toast.success('Role updated successfully');
-        setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+        setMembers(
+          members.map((m) => (m.id === memberId ? { ...m, role: newRole } : m)),
+        );
       }
     } catch (err: any) {
       toast.error('Failed to update role');
@@ -153,7 +163,10 @@ export default function ProjectMembersPage() {
           <h1 className="text-2xl font-bold">Error</h1>
         </div>
         <p className="text-destructive">{error || 'Project not found'}</p>
-        <Button onClick={() => router.push(`/dashboard/projects/${projectId}`)} variant="outline">
+        <Button
+          onClick={() => router.push(`/dashboard/projects/${projectId}`)}
+          variant="outline"
+        >
           Back to Project
         </Button>
       </div>
@@ -183,11 +196,15 @@ export default function ProjectMembersPage() {
         <CardHeader>
           <CardTitle>Add Member</CardTitle>
           <CardDescription>
-            Add a new user to your project by their email address. They must already have an account.
+            Add a new user to your project by their email address. They must
+            already have an account.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAddMember} className="flex flex-col sm:flex-row gap-4">
+          <form
+            onSubmit={handleAddMember}
+            className="flex flex-col sm:flex-row gap-4"
+          >
             <Input
               type="email"
               placeholder="user@example.com"
@@ -198,7 +215,11 @@ export default function ProjectMembersPage() {
               required
             />
             <div className="w-[180px]">
-              <Select value={newMemberRole} onValueChange={(val) => val && setNewMemberRole(val)} disabled={isLoading}>
+              <Select
+                value={newMemberRole}
+                onValueChange={(val) => val && setNewMemberRole(val)}
+                disabled={isLoading}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -210,7 +231,10 @@ export default function ProjectMembersPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" disabled={isLoading || !newMemberEmail.trim()}>
+            <Button
+              type="submit"
+              disabled={isLoading || !newMemberEmail.trim()}
+            >
               <UserPlus className="h-4 w-4 mr-2" />
               {isLoading ? 'Adding...' : 'Add Member'}
             </Button>
@@ -245,13 +269,17 @@ export default function ProjectMembersPage() {
                   >
                     <div className="flex flex-col">
                       <span className="font-medium">{member.user.email}</span>
-                      <span className="text-xs text-muted-foreground">Joined {new Date(member.createdAt).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Joined {new Date(member.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="w-[140px]">
-                        <Select 
-                          value={member.role} 
-                          onValueChange={(val: string | null) => val && handleUpdateRole(member.id, val)}
+                        <Select
+                          value={member.role}
+                          onValueChange={(val: string | null) =>
+                            val && handleUpdateRole(member.id, val)
+                          }
                         >
                           <SelectTrigger className="h-8">
                             <SelectValue />

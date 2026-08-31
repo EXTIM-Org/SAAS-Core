@@ -1,11 +1,34 @@
-import { Controller, Get, Patch, Param, Body, UseGuards, HttpException, HttpStatus, Headers, Sse, MessageEvent, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  HttpException,
+  HttpStatus,
+  Headers,
+  Sse,
+  MessageEvent,
+  Query,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { GlobalRole } from '@saas/database';
 import { HttpService } from '@nestjs/axios';
-import { lastValueFrom, catchError, Observable, Subject, interval, switchMap, startWith, merge, map } from 'rxjs';
+import {
+  lastValueFrom,
+  catchError,
+  Observable,
+  Subject,
+  interval,
+  switchMap,
+  startWith,
+  merge,
+  map,
+} from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { QueueEvents } from 'bullmq';
 import Redis from 'ioredis';
@@ -21,13 +44,16 @@ export class AdminController {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    const redisUrl = this.configService.get<string>('REDIS_URL') || 'redis://127.0.0.1:6379';
+    const redisUrl =
+      this.configService.get<string>('REDIS_URL') || 'redis://127.0.0.1:6379';
     const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
-    connection.on('error', (err) => console.error('Redis SSE Error:', err.message));
-    
+    connection.on('error', (err) =>
+      console.error('Redis SSE Error:', err.message),
+    );
+
     // Listen to queue events from Search API's crawl-queue
     this.queueEvents = new QueueEvents('crawl-queue', { connection });
-    
+
     // Broadcast on any relevant queue event
     this.queueEvents.on('waiting', () => this.queueEventsSubject.next());
     this.queueEvents.on('active', () => this.queueEventsSubject.next());
@@ -61,16 +87,18 @@ export class AdminController {
     // Fetch Search & Queue Stats from Search API
     let searchStats = {
       queue: { waiting: 0, active: 0, failed: 0, completed: 0, delayed: 0 },
-      typesense: { healthy: false, totalDocuments: 0 }
+      typesense: { healthy: false, totalDocuments: 0 },
     };
-    
+
     try {
-      const searchApiUrl = this.configService.get<string>('SEARCH_API_URL') || 'http://localhost:4002';
+      const searchApiUrl =
+        this.configService.get<string>('SEARCH_API_URL') ||
+        'http://localhost:4002';
       if (authorization) {
         const response = await lastValueFrom(
           this.httpService.get(`${searchApiUrl}/search/admin/stats`, {
-            headers: { Authorization: authorization }
-          })
+            headers: { Authorization: authorization },
+          }),
         );
         if (response.data && response.data.success) {
           searchStats = response.data;
@@ -96,20 +124,22 @@ export class AdminController {
     @Query('token') token?: string,
   ): Observable<MessageEvent> {
     const authHeader = authorization || (token ? `Bearer ${token}` : undefined);
-    
+
     // We emit immediately, and then whenever queue events occur
     return merge(
       this.queueEventsSubject.pipe(startWith(null)), // emit immediately
-      interval(10000) // fallback heartbeat every 10s
+      interval(10000), // fallback heartbeat every 10s
     ).pipe(
       switchMap(async () => {
         try {
           const stats = await this.getStats(authHeader);
           return { data: stats } as MessageEvent;
         } catch (err) {
-          return { data: { error: 'Failed to fetch live stats' } } as MessageEvent;
+          return {
+            data: { error: 'Failed to fetch live stats' },
+          } as MessageEvent;
         }
-      })
+      }),
     );
   }
 
@@ -129,7 +159,10 @@ export class AdminController {
 
   @Patch('users/:id/role')
   @Roles('SUPER_ADMIN')
-  async updateUserRole(@Param('id') id: string, @Body() body: { role: GlobalRole }) {
+  async updateUserRole(
+    @Param('id') id: string,
+    @Body() body: { role: GlobalRole },
+  ) {
     if (!body.role || !Object.values(GlobalRole).includes(body.role)) {
       throw new HttpException('Invalid role', HttpStatus.BAD_REQUEST);
     }
@@ -144,14 +177,17 @@ export class AdminController {
   @Roles('SUPER_ADMIN')
   async getSettings() {
     const settings = await this.prisma.systemSetting.findMany();
-    const settingsMap = settings.reduce((acc, curr) => {
-      acc[curr.key] = curr.value;
-      return acc;
-    }, {} as Record<string, string>);
+    const settingsMap = settings.reduce(
+      (acc, curr) => {
+        acc[curr.key] = curr.value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
 
     return {
-      defaultAutoCrawlIntervalDays: settingsMap['defaultAutoCrawlIntervalDays'] 
-        ? parseInt(settingsMap['defaultAutoCrawlIntervalDays']) 
+      defaultAutoCrawlIntervalDays: settingsMap['defaultAutoCrawlIntervalDays']
+        ? parseInt(settingsMap['defaultAutoCrawlIntervalDays'])
         : 30, // Fallback if not set
     };
   }
@@ -166,7 +202,10 @@ export class AdminController {
     await this.prisma.systemSetting.upsert({
       where: { key: 'defaultAutoCrawlIntervalDays' },
       update: { value: body.defaultAutoCrawlIntervalDays.toString() },
-      create: { key: 'defaultAutoCrawlIntervalDays', value: body.defaultAutoCrawlIntervalDays.toString() },
+      create: {
+        key: 'defaultAutoCrawlIntervalDays',
+        value: body.defaultAutoCrawlIntervalDays.toString(),
+      },
     });
 
     return { success: true };
@@ -187,13 +226,13 @@ export class AdminController {
             user: {
               select: {
                 email: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
         _count: {
-          select: { domains: true, products: true }
-        }
+          select: { domains: true, products: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -201,9 +240,19 @@ export class AdminController {
 
   @Patch('projects/:id')
   @Roles('SUPER_ADMIN')
-  async updateProject(@Param('id') id: string, @Body() body: { autoCrawlIntervalDays: number | null }) {
-    if (body.autoCrawlIntervalDays !== null && (typeof body.autoCrawlIntervalDays !== 'number' || body.autoCrawlIntervalDays < 0)) {
-      throw new HttpException('Invalid autoCrawlIntervalDays', HttpStatus.BAD_REQUEST);
+  async updateProject(
+    @Param('id') id: string,
+    @Body() body: { autoCrawlIntervalDays: number | null },
+  ) {
+    if (
+      body.autoCrawlIntervalDays !== null &&
+      (typeof body.autoCrawlIntervalDays !== 'number' ||
+        body.autoCrawlIntervalDays < 0)
+    ) {
+      throw new HttpException(
+        'Invalid autoCrawlIntervalDays',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     return this.prisma.project.update({
       where: { id },

@@ -12,7 +12,9 @@
   function initWidget() {
     const container = document.getElementById(WIDGET_CONTAINER_ID);
     if (!container) {
-      console.warn(`Search Widget: Container with id "${WIDGET_CONTAINER_ID}" not found.`);
+      console.warn(
+        `Search Widget: Container with id "${WIDGET_CONTAINER_ID}" not found.`,
+      );
       return;
     }
 
@@ -300,7 +302,7 @@
     input.type = 'text';
     input.className = 'saas-search-input';
     input.placeholder = 'Search docs, articles, content...';
-    
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'saas-close-btn';
     closeBtn.innerHTML = `
@@ -316,7 +318,7 @@
     // Results
     const resultsContainer = document.createElement('div');
     resultsContainer.className = 'saas-results-container';
-    
+
     const footer = document.createElement('div');
     footer.className = 'saas-footer';
     footer.innerHTML = 'Powered by <strong>Search SAAS</strong>';
@@ -359,9 +361,9 @@
     let debounceTimer;
     input.addEventListener('input', (e) => {
       const query = e.target.value.trim();
-      
+
       clearTimeout(debounceTimer);
-      
+
       if (!query) {
         renderEmptyState('Type to start searching...');
         return;
@@ -389,27 +391,33 @@
 
   async function performSearch(projectId, query, container) {
     try {
-      const res = await fetch(`${API_URL}/search/public/${projectId}/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(
+        `${API_URL}/search/public/${projectId}/search?q=${encodeURIComponent(query)}`,
+      );
       if (!res.ok) throw new Error('Search failed');
       const results = await res.json();
 
       if (results.length === 0) {
-        container.innerHTML = '<div class="saas-empty-state">No results found.</div>';
+        container.innerHTML =
+          '<div class="saas-empty-state">No results found.</div>';
         return;
       }
 
-      container.innerHTML = results.map(item => `
+      container.innerHTML = results
+        .map(
+          (item) => `
         <a href="${item.url}" class="saas-result-item" target="_blank" rel="noopener noreferrer">
           <h4 class="saas-result-title">${item.title || item.url}</h4>
           <p class="saas-result-url">${item.url}</p>
           <p class="saas-result-snippet">${item.content || item.snippet || ''}</p>
         </a>
-      `).join('');
-
+      `,
+        )
+        .join('');
     } catch (error) {
       console.error('Widget search error:', error);
-      container.innerHTML = '<div class="saas-empty-state">An error occurred while searching.</div>';
+      container.innerHTML =
+        '<div class="saas-empty-state">An error occurred while searching.</div>';
     }
   }
-
 })();

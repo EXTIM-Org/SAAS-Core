@@ -1,81 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Widget Demo</title>
+    <title>تست ویجت جستجو</title>
     <style>
         body {
-            font-family: system-ui, sans-serif;
-            background: linear-gradient(135deg, #f6f8fb 0%, #e5ebf4 100%);
+            font-family: Tahoma, Arial, sans-serif;
+            background-color: #f9f9f9;
             margin: 0;
-            padding: 40px;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            color: #333;
         }
-
-        .demo-container {
-            max-width: 800px;
-            margin: 0 auto;
+        .mock-website {
             background: white;
             padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            max-width: 600px;
+            text-align: center;
         }
-
         h1 {
-            margin-top: 0;
-            color: #1f2937;
+            color: #333;
         }
-
-        .code-block {
-            background: #1f2937;
-            color: #e5e7eb;
-            padding: 20px;
-            border-radius: 8px;
-            font-family: monospace;
-            overflow-x: auto;
-        }
-
-        .instruction {
-            margin-bottom: 30px;
+        p {
+            color: #666;
             line-height: 1.6;
         }
     </style>
 </head>
-
 <body>
 
-    <div class="demo-container">
-        <h1>🔍 Search Widget Live Demo</h1>
-        <p class="instruction">
-            This is a mock customer website to demonstrate how the Search Widget looks and feels.
-            Look at the bottom-right corner of your screen! A floating search button has been injected.
-        </p>
-
-        <h3>How to embed it on any site:</h3>
-        <p>Just copy and paste this code right before the closing <code>&lt;/body&gt;</code> tag of your HTML:</p>
-
-        <div class="code-block">
-            &lt;!-- 1. Add the widget container with your Project ID --&gt;
-            &lt;div id="saas-search-widget" data-project-id="76b6ee77-dd54-473b-96d7-c2b300b2fc9c"&gt;&lt;/div&gt;
-
-            &lt;!-- 2. Load the widget script --&gt;
-            &lt;script src="http://localhost:3001/widget.js" defer&gt;&lt;/script&gt;
-        </div>
-
-        <p style="margin-top: 40px; color: #666; font-size: 0.9em;">
-            <strong>Note:</strong> Since this is a test file, you need to replace `YOUR_PROJECT_ID` below with an actual
-            Project ID from your database to see real search results.
-        </p>
+    <div class="mock-website">
+        <h1>وبسایت تستی فروشگاه</h1>
+        <p>به این صفحه تستی خوش آمدید. دکمه جستجو (ذره‌بین) در پایین صفحه سمت راست توسط ویجت ما اضافه شده است.</p>
+        <p>روی آن کلیک کنید و نام یکی از محصولاتی که ایندکس کرده بودیم (مثلا: corsair یا h150i) را جستجو کنید تا نتیجه را ببینید.</p>
     </div>
 
-    <!-- WIDGET INTEGRATION -->
-    <!-- REPLACE 'YOUR_PROJECT_ID' with an actual project ID to test -->
-    <div id="saas-search-widget" data-project-id="76b6ee77-dd54-473b-96d7-c2b300b2fc9c"></div>
-    <script src="http://localhost:3001/widget.js" defer></script>
+    <!-- محل قرارگیری ویجت جستجو -->
+    <div 
+        id="saas-search-widget" 
+        data-project-id="76b6ee77-dd54-473b-96d7-c2b300b2fc9c" 
+        data-api-url="http://localhost:4001"
+        data-mode="ecommerce">
+    </div>
+
+    <!-- بارگذاری اسکریپت ویجت -->
+    <script src="http://localhost:3001/widget.js"></script>
 
 </body>
-
 </html>

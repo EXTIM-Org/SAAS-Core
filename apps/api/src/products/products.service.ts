@@ -62,7 +62,9 @@ export class ProductsService {
     });
 
     if (!member || member.role === 'VIEWER') {
-      throw new UnauthorizedException('You do not have permission to add products to this project');
+      throw new UnauthorizedException(
+        'You do not have permission to add products to this project',
+      );
     }
 
     const product = await this.prisma.product.create({

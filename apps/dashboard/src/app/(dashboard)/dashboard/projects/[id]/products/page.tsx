@@ -167,9 +167,7 @@ export default function ProductsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Create Product</CardTitle>
-          <CardDescription>
-            Add a new product to your catalog.
-          </CardDescription>
+          <CardDescription>Add a new product to your catalog.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreateProduct} className="flex flex-col gap-4">
@@ -270,9 +268,7 @@ export default function ProductsPage() {
                         <td className="px-4 py-3">
                           ${product.price.toFixed(2)}
                         </td>
-                        <td className="px-4 py-3">
-                          {product.inventoryCount}
-                        </td>
+                        <td className="px-4 py-3">{product.inventoryCount}</td>
                       </tr>
                     ))}
                   </tbody>

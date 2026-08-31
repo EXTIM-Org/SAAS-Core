@@ -31,10 +31,6 @@ export interface JobData {
 
 @Processor('crawl-queue', {
   concurrency: 5,
-  limiter: {
-    max: 5,
-    duration: 1000,
-  },
 })
 export class CrawlProcessor extends WorkerHost {
   private readonly logger = new Logger(CrawlProcessor.name);
@@ -83,7 +79,9 @@ export class CrawlProcessor extends WorkerHost {
     // Check if crawl for this project was cancelled
     const isCancelled = await this.redisClient.get(`cancel_crawl:${projectId}`);
     if (isCancelled) {
-      this.logger.warn(`Job ${job.id} aborted because crawl for project ${projectId} was cancelled.`);
+      this.logger.warn(
+        `Job ${job.id} aborted because crawl for project ${projectId} was cancelled.`,
+      );
       return;
     }
 
@@ -98,6 +96,8 @@ export class CrawlProcessor extends WorkerHost {
 
     let title: string;
     let content: string;
+    let isProduct = false;
+    let productData: any = {};
 
     const userAgent =
       randomUseragent.getRandom((ua: any) => {
@@ -177,10 +177,14 @@ export class CrawlProcessor extends WorkerHost {
         });
 
         // Check cancellation before pushing XML links
-        const cancelCheckXml = await this.redisClient.get(`cancel_crawl:${projectId}`);
+        const cancelCheckXml = await this.redisClient.get(
+          `cancel_crawl:${projectId}`,
+        );
         if (cancelCheckXml) {
-           this.logger.warn(`Aborting sitemap enqueue for project ${projectId} due to cancellation.`);
-           return;
+          this.logger.warn(
+            `Aborting sitemap enqueue for project ${projectId} due to cancellation.`,
+          );
+          return;
         }
 
         let enqueuedCount = 0;
@@ -207,6 +211,62 @@ export class CrawlProcessor extends WorkerHost {
       const $ = cheerio.load(html);
 
       title = $('title').text().trim() || url;
+
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const json = JSON.parse($(el).html() || '{}');
+          const items = Array.isArray(json) ? json : [json];
+
+          for (const item of items) {
+            const entities = item['@graph'] ? item['@graph'] : [item];
+            for (const entity of entities) {
+              if (
+                entity['@type'] === 'Product' ||
+                (Array.isArray(entity['@type']) &&
+                  entity['@type'].includes('Product'))
+              ) {
+                isProduct = true;
+                productData.name = entity.name || productData.name;
+                productData.description =
+                  entity.description || productData.description;
+
+                if (entity.image) {
+                  const firstImage = Array.isArray(entity.image)
+                    ? entity.image[0]
+                    : entity.image;
+
+                  productData.image_url =
+                    typeof firstImage === 'string'
+                      ? firstImage
+                      : firstImage?.url;
+                }
+
+                if (entity.brand) {
+                  productData.brand =
+                    typeof entity.brand === 'string'
+                      ? entity.brand
+                      : entity.brand.name;
+                }
+
+                if (entity.offers) {
+                  const offer = Array.isArray(entity.offers)
+                    ? entity.offers[0]
+                    : entity.offers;
+                  productData.price =
+                    parseFloat(offer.price) || productData.price;
+                  productData.currency =
+                    offer.priceCurrency || productData.currency;
+                  productData.in_stock = offer.availability
+                    ? offer.availability.includes('InStock')
+                    : true;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // ignore parsing error
+        }
+      });
 
       // 1. Recursive link extraction (BEFORE removing DOM elements)
       if (depth < MAX_DEPTH) {
@@ -238,10 +298,14 @@ export class CrawlProcessor extends WorkerHost {
         });
 
         // Check cancellation before pushing HTML links
-        const cancelCheckHtml = await this.redisClient.get(`cancel_crawl:${projectId}`);
+        const cancelCheckHtml = await this.redisClient.get(
+          `cancel_crawl:${projectId}`,
+        );
         if (cancelCheckHtml) {
-           this.logger.warn(`Aborting link enqueue for project ${projectId} due to cancellation.`);
-           return;
+          this.logger.warn(
+            `Aborting link enqueue for project ${projectId} due to cancellation.`,
+          );
+          return;
         }
 
         // Enqueue new unvisited links
@@ -297,9 +361,30 @@ export class CrawlProcessor extends WorkerHost {
         .upsert(document);
 
       this.logger.log(`Successfully indexed document for URL: ${url}`);
+
+      if (isProduct && productData.name) {
+        const productDocument = {
+          id: documentId,
+          projectId,
+          title: productData.name,
+          description: productData.description || content.substring(0, 200),
+          url,
+          image_url: productData.image_url,
+          price: productData.price,
+          currency: productData.currency,
+          in_stock: productData.in_stock,
+          brand: productData.brand,
+        };
+
+        await this.typesenseClient
+          .collections('products')
+          .documents()
+          .upsert(productDocument);
+        this.logger.log(`Successfully indexed product for URL: ${url}`);
+      }
     } catch (error) {
       this.logger.error(
-        `Failed to index document for URL: ${url}`,
+        `Failed to index document/product for URL: ${url}`,
         error instanceof Error ? error.stack : 'Unknown Error',
       );
       throw error; // Let BullMQ handle retry based on the backoff config

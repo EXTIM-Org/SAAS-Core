@@ -6,7 +6,6 @@ import { Prisma } from '@saas/database';
 
 @Injectable()
 export class UsersService {
-
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(createUserDto: CreateUserDto) {

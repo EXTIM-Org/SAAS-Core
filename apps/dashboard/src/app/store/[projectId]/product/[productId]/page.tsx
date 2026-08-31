@@ -18,7 +18,8 @@ export default async function ProductDetailPage({
       <div className="flex flex-col items-center justify-center min-h-[50vh] px-6">
         <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
         <p className="text-muted-foreground mb-8">
-          The product you are looking for does not exist or you do not have permission to view it.
+          The product you are looking for does not exist or you do not have
+          permission to view it.
         </p>
         <Link
           href={`/store/${projectId}`}

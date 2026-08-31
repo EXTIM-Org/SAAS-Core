@@ -31,7 +31,10 @@ export default async function StoreLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b px-6 py-4 flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur z-50">
-        <Link href={`/store/${projectId}`} className="text-xl font-bold shrink-0">
+        <Link
+          href={`/store/${projectId}`}
+          className="text-xl font-bold shrink-0"
+        >
           {project.name}
         </Link>
 
@@ -49,9 +52,7 @@ export default async function StoreLayout({
           </Link>
         </div>
       </header>
-      <main className="flex-1">
-        {children}
-      </main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

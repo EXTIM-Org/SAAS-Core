@@ -53,14 +53,12 @@ export class CoreApiClientService {
     try {
       const headers = { Authorization: authHeader };
       const response = await lastValueFrom(
-        this.httpService
-          .get(`${apiUrl}/admin/health`, { headers })
-          .pipe(
-            catchError((err: Error) => {
-              this.logger.error(`Failed to validate SUPER_ADMIN: ${err.message}`);
-              throw err;
-            }),
-          ),
+        this.httpService.get(`${apiUrl}/admin/health`, { headers }).pipe(
+          catchError((err: Error) => {
+            this.logger.error(`Failed to validate SUPER_ADMIN: ${err.message}`);
+            throw err;
+          }),
+        ),
       );
 
       return response.data?.role === 'SUPER_ADMIN';

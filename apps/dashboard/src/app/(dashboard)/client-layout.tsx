@@ -66,12 +66,14 @@ export function DashboardClientLayout({
         {/* Ambient Glow Effects */}
         <div className="ambient-glow top-0 left-0 -translate-x-1/2 -translate-y-1/2" />
         <div className="ambient-glow bottom-0 right-0 translate-x-1/3 translate-y-1/3" />
-        
+
         <aside className="fixed top-14 z-30 -ml-2 hidden h-[calc(100vh-3.5rem)] w-full shrink-0 overflow-y-auto border-r md:sticky md:block">
           <div className="py-6 pr-6 lg:py-8">
             <nav className="flex flex-col gap-2 relative z-10">
               {navigation.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const isActive =
+                  pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
                 return (
                   <Link
                     key={item.name}

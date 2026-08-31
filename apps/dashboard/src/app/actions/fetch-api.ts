@@ -7,7 +7,10 @@ const API_URL =
   process.env.API_URL ||
   'http://localhost:4000';
 
-export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
+export async function fetchWithAuth(
+  endpoint: string,
+  options: RequestInit = {},
+) {
   const cookieStore = await cookies();
   let token = cookieStore.get('token')?.value;
 
@@ -15,7 +18,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  
+
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
@@ -30,7 +33,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   // If unauthorized, try to refresh the token
   if (response.status === 401) {
     const refreshToken = cookieStore.get('refreshToken')?.value;
-    
+
     if (refreshToken) {
       try {
         const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
@@ -42,7 +45,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
         if (refreshRes.ok) {
           const result = await refreshRes.json();
           const newToken = result.accessToken || result.access_token;
-          
+
           if (newToken) {
             token = newToken;
             // Update cookies
@@ -52,7 +55,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
               maxAge: 7 * 24 * 60 * 60, // 7 days
               path: '/',
             });
-            
+
             if (result.refreshToken) {
               cookieStore.set('refreshToken', result.refreshToken, {
                 httpOnly: true,

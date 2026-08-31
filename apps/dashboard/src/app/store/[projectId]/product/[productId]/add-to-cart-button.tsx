@@ -11,7 +11,10 @@ interface AddToCartButtonProps {
   productId: string;
 }
 
-export function AddToCartButton({ projectId, productId }: AddToCartButtonProps) {
+export function AddToCartButton({
+  projectId,
+  productId,
+}: AddToCartButtonProps) {
   const [isPending, setIsPending] = useState(false);
 
   const handleAddToCart = async () => {
@@ -24,7 +27,9 @@ export function AddToCartButton({ projectId, productId }: AddToCartButtonProps) 
         toast.success('Added to cart successfully');
       }
     } catch {
-      toast.error('Failed to add to cart. Please ensure you are logged in or try again.');
+      toast.error(
+        'Failed to add to cart. Please ensure you are logged in or try again.',
+      );
     } finally {
       setIsPending(false);
     }

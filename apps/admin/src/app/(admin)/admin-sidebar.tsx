@@ -24,11 +24,11 @@ export function AdminSidebar() {
       <nav className="flex flex-col gap-2 relative z-10 px-4 py-4">
         {navigation.map((item) => {
           // In admin, we have root '/' and other paths.
-          const isActive = 
-            item.href === '/' 
-              ? pathname === '/' 
+          const isActive =
+            item.href === '/'
+              ? pathname === '/'
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          
+
           return (
             <Link
               key={item.name}

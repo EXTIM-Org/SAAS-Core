@@ -26,8 +26,10 @@ export function UsersTable({ initialUsers }: { initialUsers: User[] }) {
     try {
       const res = await updateUserRole(userId, newRole);
       if (res.error) throw new Error(res.error);
-      
-      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+
+      setUsers(
+        users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
+      );
       toast.success('User role updated successfully');
     } catch (error) {
       toast.error('Failed to update role');
@@ -49,7 +51,9 @@ export function UsersTable({ initialUsers }: { initialUsers: User[] }) {
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.email}</TableCell>
-              <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+              <TableCell>
+                {new Date(user.createdAt).toLocaleDateString()}
+              </TableCell>
               <TableCell>
                 <select
                   value={user.role}

@@ -21,7 +21,7 @@ type Project = {
   members?: {
     user: {
       email: string;
-    }
+    };
   }[];
   _count: {
     domains: number;
@@ -29,7 +29,11 @@ type Project = {
   };
 };
 
-export function ProjectsTable({ projects: initialProjects }: { projects: Project[] }) {
+export function ProjectsTable({
+  projects: initialProjects,
+}: {
+  projects: Project[];
+}) {
   const [projects, setProjects] = useState(initialProjects);
 
   const handleUpdateInterval = async (projectId: string, value: string) => {
@@ -49,8 +53,8 @@ export function ProjectsTable({ projects: initialProjects }: { projects: Project
       toast.success('Project interval updated');
       setProjects((prev) =>
         prev.map((p) =>
-          p.id === projectId ? { ...p, autoCrawlIntervalDays: interval } : p
-        )
+          p.id === projectId ? { ...p, autoCrawlIntervalDays: interval } : p,
+        ),
       );
     }
   };
@@ -72,10 +76,14 @@ export function ProjectsTable({ projects: initialProjects }: { projects: Project
           {projects.map((project) => (
             <TableRow key={project.id}>
               <TableCell className="font-medium">{project.name}</TableCell>
-              <TableCell>{project.members?.[0]?.user?.email || 'Unknown'}</TableCell>
+              <TableCell>
+                {project.members?.[0]?.user?.email || 'Unknown'}
+              </TableCell>
               <TableCell>{project._count?.domains || 0}</TableCell>
               <TableCell>{project._count.products}</TableCell>
-              <TableCell>{new Date(project.createdAt).toLocaleDateString()}</TableCell>
+              <TableCell>
+                {new Date(project.createdAt).toLocaleDateString()}
+              </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Input
@@ -85,15 +93,18 @@ export function ProjectsTable({ projects: initialProjects }: { projects: Project
                     className="w-full"
                     defaultValue={project.autoCrawlIntervalDays ?? ''}
                     onBlur={(e) => {
-                      const currentVal = project.autoCrawlIntervalDays === null ? '' : project.autoCrawlIntervalDays.toString();
+                      const currentVal =
+                        project.autoCrawlIntervalDays === null
+                          ? ''
+                          : project.autoCrawlIntervalDays.toString();
                       if (e.target.value !== currentVal) {
                         handleUpdateInterval(project.id, e.target.value);
                       }
                     }}
                   />
-                  <a 
-                    href={`http://localhost:3001/dashboard/projects/${project.id}`} 
-                    target="_blank" 
+                  <a
+                    href={`http://localhost:3001/dashboard/projects/${project.id}`}
+                    target="_blank"
                     rel="noreferrer"
                     className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                   >
@@ -105,7 +116,10 @@ export function ProjectsTable({ projects: initialProjects }: { projects: Project
           ))}
           {projects.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+              <TableCell
+                colSpan={6}
+                className="text-center text-muted-foreground h-24"
+              >
                 No projects found.
               </TableCell>
             </TableRow>

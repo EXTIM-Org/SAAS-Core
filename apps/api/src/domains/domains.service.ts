@@ -19,7 +19,9 @@ export class DomainsService {
     });
 
     if (!member || member.role === 'VIEWER') {
-      throw new UnauthorizedException('You do not have permission to add domains to this project');
+      throw new UnauthorizedException(
+        'You do not have permission to add domains to this project',
+      );
     }
 
     const existingDomain = await this.prisma.domain.findUnique({

@@ -33,9 +33,11 @@ export function middleware(request: NextRequest) {
 
     const payload = decodeJwt(token);
     if (!payload || payload.role !== 'SUPER_ADMIN') {
-      // If they are logged in but not an admin, redirect them to the main app dashboard 
+      // If they are logged in but not an admin, redirect them to the main app dashboard
       // or just redirect to login with an error. We'll clear the token and redirect to login.
-      const response = NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
+      const response = NextResponse.redirect(
+        new URL('/login?error=unauthorized', request.url),
+      );
       response.cookies.delete('token');
       return response;
     }

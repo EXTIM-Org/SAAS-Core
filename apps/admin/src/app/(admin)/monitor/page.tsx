@@ -8,12 +8,15 @@ import { LiveStatsDisplay } from '@/components/admin/LiveStatsDisplay';
 
 async function getStats(token: string) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/admin/stats`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/admin/stats`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        next: { revalidate: 0 },
       },
-      next: { revalidate: 0 },
-    });
+    );
     if (!res.ok) return null;
     return res.json();
   } catch (error) {
@@ -37,7 +40,9 @@ export default async function MonitorDashboardPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">System Monitor</h1>
-          <p className="text-muted-foreground mt-1">Live metrics and infrastructure health.</p>
+          <p className="text-muted-foreground mt-1">
+            Live metrics and infrastructure health.
+          </p>
         </div>
         <Link href="/">
           <Button variant="outline" className="gap-2 hover-glow">
@@ -45,7 +50,7 @@ export default async function MonitorDashboardPage() {
           </Button>
         </Link>
       </div>
-      
+
       {/* Hand off to the client component for real-time SSE updates and animations */}
       <LiveStatsDisplay initialStats={stats} token={token} />
     </div>

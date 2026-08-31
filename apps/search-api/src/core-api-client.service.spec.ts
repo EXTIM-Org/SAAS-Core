@@ -32,19 +32,17 @@ describe('CoreApiClientService', () => {
   });
 
   it('should return true when API call succeeds', async () => {
-    jest
-      .spyOn(httpService, 'get')
-      .mockReturnValue(
-        of({
-          data: { valid: true },
-          status: 200,
-          statusText: 'OK',
-          headers: {} as Record<string, string>,
-          config: {
-            headers: {} as import('axios').AxiosRequestHeaders,
-          } as import('axios').InternalAxiosRequestConfig,
-        }),
-      );
+    jest.spyOn(httpService, 'get').mockReturnValue(
+      of({
+        data: { valid: true },
+        status: 200,
+        statusText: 'OK',
+        headers: {} as Record<string, string>,
+        config: {
+          headers: {} as import('axios').AxiosRequestHeaders,
+        } as import('axios').InternalAxiosRequestConfig,
+      }),
+    );
 
     const result = await service.validateProject('valid-id', 'Bearer token');
     expect(result).toBe(true);

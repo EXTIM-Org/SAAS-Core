@@ -39,7 +39,7 @@ export async function searchProjectAction(projectId: string, query: string) {
 export async function crawlUrlAction(
   projectId: string,
   url: string,
-  domain: string
+  domain: string,
 ) {
   if (!url.trim() || !domain.trim()) {
     return { error: 'URL and domain are required' };
@@ -55,7 +55,9 @@ export async function crawlUrlAction(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return { error: errorData.message || 'Failed to submit URL for indexing' };
+      return {
+        error: errorData.message || 'Failed to submit URL for indexing',
+      };
     }
 
     const data = await response.json();
@@ -66,14 +68,17 @@ export async function crawlUrlAction(
   }
 }
 
-export async function getProjectDocumentsAction(projectId: string, page: number = 1) {
+export async function getProjectDocumentsAction(
+  projectId: string,
+  page: number = 1,
+) {
   const url = new URL(`${SEARCH_API_URL}/search/${projectId}/documents`);
   url.searchParams.append('page', page.toString());
-  
+
   try {
     const response = await fetchWithAuth(url.toString(), {
       method: 'GET',
-      cache: 'no-store'
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -89,9 +94,14 @@ export async function getProjectDocumentsAction(projectId: string, page: number 
   }
 }
 
-export async function deleteProjectDocumentAction(projectId: string, documentId: string) {
-  const url = new URL(`${SEARCH_API_URL}/search/${projectId}/documents/${documentId}`);
-  
+export async function deleteProjectDocumentAction(
+  projectId: string,
+  documentId: string,
+) {
+  const url = new URL(
+    `${SEARCH_API_URL}/search/${projectId}/documents/${documentId}`,
+  );
+
   try {
     const response = await fetchWithAuth(url.toString(), {
       method: 'DELETE',
@@ -110,9 +120,61 @@ export async function deleteProjectDocumentAction(projectId: string, documentId:
   }
 }
 
+export async function getProjectProductsAction(
+  projectId: string,
+  page: number = 1,
+) {
+  const url = new URL(`${SEARCH_API_URL}/search/${projectId}/products`);
+  url.searchParams.append('page', page.toString());
+
+  try {
+    const response = await fetchWithAuth(url.toString(), {
+      method: 'GET',
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.message || 'Failed to fetch products' };
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    const err = error as Error;
+    return { error: err.message || 'An error occurred' };
+  }
+}
+
+export async function deleteProjectProductAction(
+  projectId: string,
+  productId: string,
+) {
+  const url = new URL(
+    `${SEARCH_API_URL}/search/${projectId}/products/${productId}`,
+  );
+
+  try {
+    const response = await fetchWithAuth(url.toString(), {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.message || 'Failed to delete product' };
+    }
+
+    const data = await response.json();
+    return { success: true, message: data.message };
+  } catch (error) {
+    const err = error as Error;
+    return { error: err.message || 'An error occurred' };
+  }
+}
+
 export async function deleteAllProjectDocumentsAction(projectId: string) {
   const url = new URL(`${SEARCH_API_URL}/search/${projectId}/documents`);
-  
+
   try {
     const response = await fetchWithAuth(url.toString(), {
       method: 'DELETE',
@@ -133,7 +195,7 @@ export async function deleteAllProjectDocumentsAction(projectId: string) {
 
 export async function clearProjectQueueAction(projectId: string) {
   const url = new URL(`${SEARCH_API_URL}/search/${projectId}/queue`);
-  
+
   try {
     const response = await fetchWithAuth(url.toString(), {
       method: 'DELETE',
@@ -154,11 +216,11 @@ export async function clearProjectQueueAction(projectId: string) {
 
 export async function getProjectAnalyticsAction(projectId: string) {
   const url = new URL(`${SEARCH_API_URL}/search/${projectId}/analytics`);
-  
+
   try {
     const response = await fetchWithAuth(url.toString(), {
       method: 'GET',
-      cache: 'no-store'
+      cache: 'no-store',
     });
 
     if (!response.ok) {
