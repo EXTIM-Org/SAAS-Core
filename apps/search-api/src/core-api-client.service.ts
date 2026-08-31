@@ -45,24 +45,25 @@ export class CoreApiClientService {
   }
 
   async validateSuperAdmin(authHeader?: string): Promise<boolean> {
-    const apiUrl =
-      this.configService.get<string>('API_URL') || 'http://localhost:4000';
-
     if (!authHeader) return false;
 
     try {
-      const headers = { Authorization: authHeader };
-      const response = await lastValueFrom(
-        this.httpService.get(`${apiUrl}/admin/health`, { headers }).pipe(
-          catchError((err: Error) => {
-            this.logger.error(`Failed to validate SUPER_ADMIN: ${err.message}`);
-            throw err;
-          }),
-        ),
-      );
+      // Remove 'Bearer ' prefix if present
+      const token = authHeader.replace(/^Bearer\s+/i, '');
+      const secret = this.configService.get<string>('JWT_ACCESS_SECRET');
 
-      return response.data?.role === 'SUPER_ADMIN';
-    } catch {
+      if (!secret) {
+        this.logger.error('JWT_ACCESS_SECRET is not configured for local verification.');
+        return false;
+      }
+
+      // Verify token locally without hitting the Core API
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, secret) as any;
+
+      return decoded?.role === 'SUPER_ADMIN';
+    } catch (err: any) {
+      this.logger.error(`Failed to validate SUPER_ADMIN locally: ${err.message}`);
       return false;
     }
   }

@@ -413,6 +413,9 @@ importers:
       bullmq:
         specifier: ^6.1.2
         version: 6.1.2(ioredis@6.0.0(supports-color@8.1.1))
+      jsonwebtoken:
+        specifier: ^9.0.3
+        version: 9.0.3
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -444,6 +447,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
