@@ -105,7 +105,7 @@ export class AdminController {
         }
       }
     } catch (err: any) {
-      console.error('Failed to fetch search stats:', err.message);
+      console.warn('Could not fetch search stats:', err.message);
     }
 
     return {

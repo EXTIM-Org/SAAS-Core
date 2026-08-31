@@ -63,7 +63,11 @@ export class CoreApiClientService {
 
       return decoded?.role === 'SUPER_ADMIN';
     } catch (err: any) {
-      this.logger.error(`Failed to validate SUPER_ADMIN locally: ${err.message}`);
+      if (err.name === 'TokenExpiredError') {
+         this.logger.warn(`SUPER_ADMIN token expired`);
+      } else {
+         this.logger.error(`Failed to validate SUPER_ADMIN locally: ${err.message}`);
+      }
       return false;
     }
   }
