@@ -631,6 +631,35 @@ export class SearchController {
     }
   }
 
+  @Delete(':projectId/products')
+  async deleteAllProducts(
+    @Param('projectId') projectId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const isValid = await this.coreApiClientService.validateProject(
+      projectId,
+      authorization,
+    );
+
+    if (!isValid) {
+      throw new NotFoundException(
+        `Project with ID ${projectId} not found or unauthorized`,
+      );
+    }
+
+    try {
+      await this.typesenseClient
+        .collections('products')
+        .documents()
+        .delete({ filter_by: `projectId:=${projectId}` });
+
+      return { success: true, message: 'All products deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting all products::', error instanceof Error ? error.message : error);
+      throw new NotFoundException('Failed to delete products');
+    }
+  }
+
   @Delete(':projectId/products/:productId')
   async deleteProduct(
     @Param('projectId') projectId: string,

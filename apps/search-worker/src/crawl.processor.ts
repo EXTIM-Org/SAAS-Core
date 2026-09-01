@@ -268,6 +268,42 @@ export class CrawlProcessor extends WorkerHost {
         }
       });
 
+      // Fallback for WooCommerce or sites lacking Product JSON-LD
+      if (!isProduct) {
+        const bodyClass = $('body').attr('class') || '';
+        const ogType = $('meta[property="og:type"]').attr('content');
+        
+        if (bodyClass.includes('single-product') || ogType === 'product') {
+          this.logger.log(`Fallback product detection triggered for ${url} (bodyClass: ${bodyClass.includes('single-product')}, ogType: ${ogType})`);
+          isProduct = true;
+          productData.name = $('h1').first().text().trim() || title;
+          
+          const metaImage = $('meta[property="og:image"]').attr('content');
+          if (metaImage) {
+            productData.image_url = metaImage;
+          }
+          
+          let priceText = $('.woocommerce-Price-amount').first().text();
+          if (!priceText) {
+             priceText = $('meta[property="product:price:amount"]').attr('content') || '';
+          }
+          
+          // Convert Persian digits to English
+          const persianToEnglish = (str: string) => str.replace(/[۰-۹]/g, d => '0123456789'[d.charCodeAt(0) - 1776]);
+          const normalizedPrice = persianToEnglish(priceText).replace(/[^\d.]/g, '');
+          const parsedPrice = parseFloat(normalizedPrice);
+          
+          if (!isNaN(parsedPrice)) {
+            productData.price = parsedPrice;
+          }
+          
+          productData.currency = $('meta[property="product:price:currency"]').attr('content') || productData.currency;
+          
+          this.logger.log(`Fallback product parsed: ${productData.name} - ${productData.price} ${productData.currency}`);
+        }
+      }
+
+
       // 1. Recursive link extraction (BEFORE removing DOM elements)
       if (depth < MAX_DEPTH) {
         const links = new Set<string>();

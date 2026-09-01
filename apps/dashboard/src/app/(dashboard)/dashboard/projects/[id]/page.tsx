@@ -18,6 +18,7 @@ import {
   getProjectAnalyticsAction,
   getProjectProductsAction,
   deleteProjectProductAction,
+  deleteAllProjectProductsAction,
 } from '@/app/actions/search';
 import DashboardLoading from '../../loading';
 import { Button } from '@/components/ui/button';
@@ -95,6 +96,7 @@ export default function ProjectDetailsPage() {
   const [isDeletingProduct, setIsDeletingProduct] = useState<string | null>(
     null,
   );
+  const [isDeletingAllProducts, setIsDeletingAllProducts] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [analytics, setAnalytics] = useState<{
     totalSearches: number;
@@ -330,6 +332,41 @@ export default function ProjectDetailsPage() {
       toast.success(res.message || 'Crawler queue cleared successfully');
     }
     setIsClearingQueue(false);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    setIsDeletingProduct(productId);
+    const res = await deleteProjectProductAction(projectId, productId);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success('Product deleted successfully');
+      setIndexedProducts(indexedProducts.filter((p) => p.id !== productId));
+      setProductsTotal((prev) => prev - 1);
+    }
+    setIsDeletingProduct(null);
+  };
+
+  const handleDeleteAllProducts = async () => {
+    if (
+      !confirm(
+        'Are you sure you want to delete ALL indexed products? This cannot be undone.',
+      )
+    )
+      return;
+    setIsDeletingAllProducts(true);
+    const res = await deleteAllProjectProductsAction(projectId);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success('All products deleted successfully');
+      setIndexedProducts([]);
+      setProductsTotal(0);
+      setProductsTotalPages(1);
+      setProductsPage(1);
+    }
+    setIsDeletingAllProducts(false);
   };
 
   if (initialLoading) {
@@ -826,15 +863,30 @@ export default function ProjectDetailsPage() {
                 Products automatically detected and indexed by the crawler. Total: {productsTotal}
               </CardDescription>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => fetchProducts(true)}
-              disabled={isLoadingProducts}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => fetchProducts(true)}
+                disabled={isLoadingProducts}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteAllProducts}
+                disabled={isDeletingAllProducts || indexedProducts.length === 0}
+              >
+                {isDeletingAllProducts ? (
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
+                Clear All Products
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {isLoadingProducts && indexedProducts.length === 0 ? (
@@ -858,16 +910,34 @@ export default function ProjectDetailsPage() {
                           <img 
                             src={product.image_url} 
                             alt={product.title} 
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
                           />
                         ) : (
                           <Package className="w-16 h-16 text-muted-foreground/30" />
                         )}
                         
-                        <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                        <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
                           <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm ${product.in_stock === false ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}`}>
                             {product.in_stock === false ? 'Out of Stock' : 'In Stock'}
                           </span>
+                        </div>
+                        
+                        <div className="absolute top-3 left-3 z-10">
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="h-7 w-7 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            disabled={isDeletingProduct === product.id}
+                          >
+                            {isDeletingProduct === product.id ? (
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            <span className="sr-only">Delete</span>
+                          </Button>
                         </div>
                       </div>
                       

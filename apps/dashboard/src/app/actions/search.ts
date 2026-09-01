@@ -193,6 +193,27 @@ export async function deleteAllProjectDocumentsAction(projectId: string) {
   }
 }
 
+export async function deleteAllProjectProductsAction(projectId: string) {
+  const url = new URL(`${SEARCH_API_URL}/search/${projectId}/products`);
+
+  try {
+    const response = await fetchWithAuth(url.toString(), {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.message || 'Failed to delete all products' };
+    }
+
+    const data = await response.json();
+    return { success: true, message: data.message };
+  } catch (error) {
+    const err = error as Error;
+    return { error: err.message || 'An error occurred' };
+  }
+}
+
 export async function clearProjectQueueAction(projectId: string) {
   const url = new URL(`${SEARCH_API_URL}/search/${projectId}/queue`);
 
