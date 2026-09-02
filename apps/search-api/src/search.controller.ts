@@ -774,25 +774,19 @@ export class SearchController {
 
       // Clear the Redis cache for this project's crawled URLs and visited links
       try {
-        const redis = new Redis({
-          host: process.env.REDIS_HOST || '127.0.0.1',
-          port: parseInt(process.env.REDIS_PORT || '6379', 10),
-        });
-
         // Find all crawled keys for this project
-        const keys = await redis.keys(`crawled:${projectId}:*`);
+        const keys = await this.redisClient.keys(`crawled:${projectId}:*`);
 
         // Add the visited set key
         keys.push(`visited:${projectId}`);
 
         if (keys.length > 0) {
-          await redis.del(...keys);
+          await this.redisClient.del(...keys);
         }
 
         // Signal active workers to stop immediately
-        await redis.set(`cancel_crawl:${projectId}`, '1', 'EX', 60);
+        await this.redisClient.set(`cancel_crawl:${projectId}`, '1', 'EX', 60);
 
-        redis.disconnect();
       } catch (err) {
         console.error('Error clearing Redis cache::', err instanceof Error ? err.message : err);
       }
