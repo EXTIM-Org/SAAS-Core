@@ -26,7 +26,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${vazirmatn.variable} font-sans h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col relative">
+      <body className="min-h-full flex flex-col relative overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

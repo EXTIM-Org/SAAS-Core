@@ -62,7 +62,7 @@ export function ProjectsTable({
   };
 
   return (
-    <div className="rounded-md border bg-card">
+    <div className="rounded-md border bg-card overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -113,7 +113,10 @@ export function ProjectsTable({
                       }
                       try {
                         await impersonateUserAction(ownerId, project.id);
-                      } catch (err) {
+                      } catch (err: any) {
+                        if (err?.message === 'NEXT_REDIRECT') {
+                          throw err;
+                        }
                         toast.error('Failed to impersonate user');
                       }
                     }}

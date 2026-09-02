@@ -18,8 +18,8 @@ export default function Home() {
             </div>
             <span className="font-bold text-xl tracking-tight">SearchSAAS</span>
           </div>
-          <div className="flex items-center gap-6">
-            <a href="#features" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Features</a>
+          <div className="flex items-center gap-3 sm:gap-6">
+            <a href="#features" className="text-sm font-medium text-slate-300 hover:text-white transition-colors hidden sm:block">Features</a>
             <a 
               href={`${dashboardUrl}/login`} 
               className="text-sm font-medium text-slate-300 hover:text-white transition-colors hidden sm:block"
