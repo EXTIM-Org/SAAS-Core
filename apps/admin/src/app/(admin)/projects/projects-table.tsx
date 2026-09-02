@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { updateProjectInterval } from '../../actions/admin';
+import { impersonateUserAction } from '../../actions/impersonate';
 import { toast } from 'sonner';
 
 type Project = {
@@ -20,6 +21,7 @@ type Project = {
   createdAt: string;
   members?: {
     user: {
+      id: string;
       email: string;
     };
   }[];
@@ -102,14 +104,23 @@ export function ProjectsTable({
                       }
                     }}
                   />
-                  <a
-                    href={`${process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001'}/dashboard/projects/${project.id}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    onClick={async () => {
+                      const ownerId = project.members?.[0]?.user?.id;
+                      if (!ownerId) {
+                        toast.error('Project has no owner to impersonate');
+                        return;
+                      }
+                      try {
+                        await impersonateUserAction(ownerId, project.id);
+                      } catch (err) {
+                        toast.error('Failed to impersonate user');
+                      }
+                    }}
                     className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                   >
                     View
-                  </a>
+                  </button>
                 </div>
               </TableCell>
             </TableRow>

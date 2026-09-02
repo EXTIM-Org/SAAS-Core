@@ -37,7 +37,7 @@ describe('CoreApiClientService', () => {
         data: { valid: true },
         status: 200,
         statusText: 'OK',
-        headers: {} as Record<string, string>,
+        headers: {},
         config: {
           headers: {} as import('axios').AxiosRequestHeaders,
         } as import('axios').InternalAxiosRequestConfig,

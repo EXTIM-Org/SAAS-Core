@@ -71,7 +71,9 @@ export async function updateSystemSettings(
 
 export async function getAdminProjects() {
   try {
-    const res = await fetchWithAuth('/admin/projects');
+    const res = await fetchWithAuth('/admin/projects', {
+      cache: 'no-store',
+    });
     if (!res.ok) throw new Error('Failed to fetch projects');
     return { data: await res.json() };
   } catch (error: any) {

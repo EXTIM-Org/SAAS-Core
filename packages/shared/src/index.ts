@@ -7,6 +7,7 @@ export interface LoginResponse {
 export interface UserPayload {
   userId: string;
   role: string;
+  impersonatorId?: string;
 }
 
 export interface SearchResult {

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
@@ -71,5 +71,16 @@ export class AuthController {
   async logout(@CurrentUser() user: UserPayload) {
     await this.authService.logout(user.userId || (user as any).sub);
     return { success: true };
+  }
+
+  @Post('impersonate/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Impersonate a user (SUPER_ADMIN only)' })
+  @ApiResponse({ status: 201, description: 'Returns an impersonation access token.' })
+  async impersonate(
+    @CurrentUser() user: UserPayload,
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.authService.impersonateUser(user.userId || (user as any).sub, targetUserId);
   }
 }

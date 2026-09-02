@@ -53,20 +53,24 @@ export class CoreApiClientService {
       const secret = this.configService.get<string>('JWT_ACCESS_SECRET');
 
       if (!secret) {
-        this.logger.error('JWT_ACCESS_SECRET is not configured for local verification.');
+        this.logger.error(
+          'JWT_ACCESS_SECRET is not configured for local verification.',
+        );
         return false;
       }
 
       // Verify token locally without hitting the Core API
       const jwt = require('jsonwebtoken');
-      const decoded = jwt.verify(token, secret) as any;
+      const decoded = jwt.verify(token, secret);
 
       return decoded?.role === 'SUPER_ADMIN';
     } catch (err: any) {
       if (err.name === 'TokenExpiredError') {
-         this.logger.warn(`SUPER_ADMIN token expired`);
+        this.logger.warn(`SUPER_ADMIN token expired`);
       } else {
-         this.logger.error(`Failed to validate SUPER_ADMIN locally: ${err.message}`);
+        this.logger.error(
+          `Failed to validate SUPER_ADMIN locally: ${err.message}`,
+        );
       }
       return false;
     }

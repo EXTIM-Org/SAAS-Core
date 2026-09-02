@@ -17,8 +17,11 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  private async generateTokens(user: any) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+  private async generateTokens(user: any, impersonatorId?: string) {
+    const payload: any = { sub: user.id, email: user.email, role: user.role };
+    if (impersonatorId) {
+      payload.impersonatorId = impersonatorId;
+    }
     const accessToken = this.jwtService.sign(payload);
 
     const refreshSecret =
@@ -121,5 +124,19 @@ export class AuthService {
 
   async logout(userId: string) {
     await this.usersService.removeRefreshToken(userId);
+  }
+
+  async impersonateUser(adminId: string, targetUserId: string) {
+    const admin = await this.usersService.findById(adminId);
+    if (!admin || admin.role !== 'SUPER_ADMIN') {
+      throw new UnauthorizedException('Only SUPER_ADMIN can impersonate users');
+    }
+
+    const targetUser = await this.usersService.findById(targetUserId);
+    if (!targetUser) {
+      throw new UnauthorizedException('Target user not found');
+    }
+
+    return this.generateTokens(targetUser, adminId);
   }
 }

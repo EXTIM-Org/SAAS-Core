@@ -27,11 +27,25 @@ export function middleware(request: NextRequest) {
   const isPublicRoute = pathname === '/login';
 
   if (!isPublicRoute) {
-    if (!token) {
+    const adminToken = request.cookies.get('admin_token')?.value;
+
+    if (!token && !adminToken) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    const payload = decodeJwt(token);
+    let payload = token ? decodeJwt(token) : null;
+
+    // If current token is missing or not admin, but we have admin_token, restore it
+    if ((!payload || payload.role !== 'SUPER_ADMIN') && adminToken) {
+      const adminPayload = decodeJwt(adminToken);
+      if (adminPayload && adminPayload.role === 'SUPER_ADMIN') {
+        const response = NextResponse.redirect(request.url);
+        response.cookies.set('token', adminToken);
+        response.cookies.delete('admin_token');
+        return response;
+      }
+    }
+
     if (!payload || payload.role !== 'SUPER_ADMIN') {
       // If they are logged in but not an admin, redirect them to the main app dashboard
       // or just redirect to login with an error. We'll clear the token and redirect to login.
@@ -39,6 +53,7 @@ export function middleware(request: NextRequest) {
         new URL('/login?error=unauthorized', request.url),
       );
       response.cookies.delete('token');
+      response.cookies.delete('admin_token');
       return response;
     }
   }

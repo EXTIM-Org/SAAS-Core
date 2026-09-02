@@ -63,7 +63,10 @@ export class SearchController {
           .retrieve();
         totalDocuments = collection.num_documents || 0;
       } catch (err) {
-        console.error('Failed to retrieve typesense stats::', err instanceof Error ? err.message : err);
+        console.error(
+          'Failed to retrieve typesense stats::',
+          err instanceof Error ? err.message : err,
+        );
       }
 
       // Get Worker System Stats and Analytics from Redis
@@ -84,7 +87,10 @@ export class SearchController {
           totalSearchesToday = parseInt(searches, 10);
         }
       } catch (err) {
-        console.error('Failed to retrieve stats from Redis::', err instanceof Error ? err.message : err);
+        console.error(
+          'Failed to retrieve stats from Redis::',
+          err instanceof Error ? err.message : err,
+        );
       }
 
       // Fetch Typesense Latency (from /stats.json) and Top Tenants
@@ -134,7 +140,10 @@ export class SearchController {
           });
         }
       } catch (err) {
-        console.error('Failed to fetch typesense analytics or facets::', err instanceof Error ? err.message : err);
+        console.error(
+          'Failed to fetch typesense analytics or facets::',
+          err instanceof Error ? err.message : err,
+        );
       }
 
       return {
@@ -159,7 +168,10 @@ export class SearchController {
         failedJobs,
       };
     } catch (error) {
-      console.error('Error fetching search admin stats::', error instanceof Error ? error.message : error);
+      console.error(
+        'Error fetching search admin stats::',
+        error instanceof Error ? error.message : error,
+      );
       throw new NotFoundException('Failed to fetch search stats');
     }
   }
@@ -223,7 +235,10 @@ export class SearchController {
         zeroQueries,
       };
     } catch (error) {
-      console.error('Error fetching analytics::', error instanceof Error ? error.message : error);
+      console.error(
+        'Error fetching analytics::',
+        error instanceof Error ? error.message : error,
+      );
       return { totalSearches: 0, topQueries: [], zeroQueries: [] };
     }
   }
@@ -289,7 +304,10 @@ export class SearchController {
 
       return searchResults.hits?.map((hit) => hit.document) || [];
     } catch (error) {
-      console.error('Public search error::', error instanceof Error ? error.message : error);
+      console.error(
+        'Public search error::',
+        error instanceof Error ? error.message : error,
+      );
       return [];
     }
   }
@@ -365,7 +383,10 @@ export class SearchController {
         facets: searchResults.facet_counts || [],
       };
     } catch (error) {
-      console.error('Public product search error::', error instanceof Error ? error.message : error);
+      console.error(
+        'Public product search error::',
+        error instanceof Error ? error.message : error,
+      );
       return { results: [], facets: [] };
     }
   }
@@ -512,7 +533,10 @@ export class SearchController {
         });
       }
     } catch (err) {
-      console.error('Error updating lastCrawledAt::', err instanceof Error ? err.message : err);
+      console.error(
+        'Error updating lastCrawledAt::',
+        err instanceof Error ? err.message : err,
+      );
     }
 
     return { success: true, message: 'URL added to crawl queue' };
@@ -555,7 +579,10 @@ export class SearchController {
         totalPages: Math.ceil(searchResults.found / perPage),
       };
     } catch (error) {
-      console.error('Error fetching documents from Typesense::', error instanceof Error ? error.message : error);
+      console.error(
+        'Error fetching documents from Typesense::',
+        error instanceof Error ? error.message : error,
+      );
       return { documents: [], total: 0, page: 1, totalPages: 0 };
     }
   }
@@ -584,7 +611,10 @@ export class SearchController {
 
       return { success: true, message: 'All documents deleted successfully' };
     } catch (error) {
-      console.error('Error deleting all documents::', error instanceof Error ? error.message : error);
+      console.error(
+        'Error deleting all documents::',
+        error instanceof Error ? error.message : error,
+      );
       throw new NotFoundException('Failed to delete documents');
     }
   }
@@ -626,7 +656,10 @@ export class SearchController {
         totalPages: Math.ceil(searchResults.found / perPage),
       };
     } catch (error) {
-      console.error('Error fetching products from Typesense::', error instanceof Error ? error.message : error);
+      console.error(
+        'Error fetching products from Typesense::',
+        error instanceof Error ? error.message : error,
+      );
       return { products: [], total: 0, page: 1, totalPages: 0 };
     }
   }
@@ -655,7 +688,10 @@ export class SearchController {
 
       return { success: true, message: 'All products deleted successfully' };
     } catch (error) {
-      console.error('Error deleting all products::', error instanceof Error ? error.message : error);
+      console.error(
+        'Error deleting all products::',
+        error instanceof Error ? error.message : error,
+      );
       throw new NotFoundException('Failed to delete products');
     }
   }
@@ -786,9 +822,11 @@ export class SearchController {
 
         // Signal active workers to stop immediately
         await this.redisClient.set(`cancel_crawl:${projectId}`, '1', 'EX', 60);
-
       } catch (err) {
-        console.error('Error clearing Redis cache::', err instanceof Error ? err.message : err);
+        console.error(
+          'Error clearing Redis cache::',
+          err instanceof Error ? err.message : err,
+        );
       }
 
       return {
@@ -796,7 +834,10 @@ export class SearchController {
         message: `Cleared ${deletedCount} jobs from the queue and reset crawler cache.`,
       };
     } catch (error) {
-      console.error('Error clearing queue::', error instanceof Error ? error.message : error);
+      console.error(
+        'Error clearing queue::',
+        error instanceof Error ? error.message : error,
+      );
       throw new NotFoundException('Failed to clear queue');
     }
   }

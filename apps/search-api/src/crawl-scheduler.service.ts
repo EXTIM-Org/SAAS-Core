@@ -93,7 +93,10 @@ export class CrawlSchedulerService {
 
       redis.disconnect();
     } catch (error) {
-      this.logger.error('Error in crawl scheduler:', error instanceof Error ? error.message : error);
+      this.logger.error(
+        'Error in crawl scheduler:',
+        error instanceof Error ? error.message : error,
+      );
     }
   }
 }

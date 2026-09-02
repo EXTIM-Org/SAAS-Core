@@ -225,6 +225,7 @@ export class AdminController {
           select: {
             user: {
               select: {
+                id: true,
                 email: true,
               },
             },
