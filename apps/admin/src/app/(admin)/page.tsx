@@ -11,6 +11,26 @@ import { Button } from '@/components/ui/button';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { BusinessMetricsDisplay } from '@/components/admin/BusinessMetricsDisplay';
+
+async function getStats(token: string) {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/admin/stats`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        next: { revalidate: 0 },
+      },
+    );
+    if (!res.ok) return null;
+    return res.json();
+  } catch (error) {
+    console.error('Failed to fetch admin stats:', error);
+    return null;
+  }
+}
 
 export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
@@ -20,17 +40,25 @@ export default async function AdminDashboardPage() {
     redirect('/login');
   }
 
+  const stats = await getStats(token);
+
   // Admin Dashboard Overview
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
 
         <main className="grid flex-1 items-start gap-6 p-4 sm:px-6 sm:py-0 md:gap-8">
-          <div className="flex items-center">
+          <div className="flex items-center mb-2">
             <h1 className="text-3xl font-bold tracking-tight">
               Dashboard Overview
             </h1>
           </div>
+          
+          <BusinessMetricsDisplay 
+            totalUsers={stats?.totalUsers || 0}
+            totalProjects={stats?.totalProjects || 0}
+            totalRevenue={stats?.totalRevenue || 0}
+          />
 
           <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
             <Link href="/users">

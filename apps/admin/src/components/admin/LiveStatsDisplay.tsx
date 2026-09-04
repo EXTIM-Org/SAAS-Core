@@ -16,41 +16,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-
-// Animation variants for numbers
-const numberVariant = {
-  initial: { opacity: 0, y: -10 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring', stiffness: 300, damping: 20 },
-  },
-  exit: { opacity: 0, y: 10 },
-};
-
-// A helper component to animate changing numbers
-const AnimatedNumber = ({
-  value,
-  className = 'text-3xl font-bold',
-}: {
-  value: string | number;
-  className?: string;
-}) => (
-  <div className="overflow-hidden h-10">
-    <AnimatePresence mode="popLayout">
-      <motion.div
-        key={value}
-        variants={numberVariant}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className={className}
-      >
-        {value}
-      </motion.div>
-    </AnimatePresence>
-  </div>
-);
+import { AnimatedNumber } from './AnimatedNumber';
 
 export function LiveStatsDisplay({
   initialStats,
@@ -149,110 +115,9 @@ export function LiveStatsDisplay({
       </div>
 
       <div className="grid flex-1 items-start gap-8">
-        {/* Business Metrics Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" /> Business Metrics
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="hover-glow bg-card-glass border-primary/20">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Users
-                </CardTitle>
-                <Users className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <AnimatedNumber value={stats?.totalUsers || 0} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Registered accounts
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="hover-glow bg-card-glass border-primary/20">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Projects
-                </CardTitle>
-                <Globe className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <AnimatedNumber value={stats?.totalProjects || 0} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Active workspaces
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="hover-glow bg-card-glass border-primary/20">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Revenue
-                </CardTitle>
-                <Activity className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <AnimatedNumber
-                  value={`$${(stats?.totalRevenue || 0).toLocaleString()}`}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Lifetime MRR
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Infrastructure Health */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Server className="h-5 w-5 text-primary" /> Infrastructure Health
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="hover-glow bg-card-glass border-primary/20">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Typesense Status
-                </CardTitle>
-                {stats?.searchStats?.typesense?.healthy ? (
-                  <CheckCircle2 className="h-4 w-4 text-green-500 glow-text" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-red-500 glow-text" />
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold h-10">
-                  {stats?.searchStats?.typesense?.healthy
-                    ? 'Operational'
-                    : 'Degraded'}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Search cluster health
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="hover-glow bg-card-glass border-primary/20">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Indexed Documents
-                </CardTitle>
-                <Database className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <AnimatedNumber
-                  value={(
-                    stats?.searchStats?.typesense?.totalDocuments || 0
-                  ).toLocaleString()}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Total searchable records
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
 
         {/* System Resources */}
-        <div className="mt-8">
+        <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" /> System Resources
           </h2>
@@ -327,40 +192,6 @@ export function LiveStatsDisplay({
             <Card className="hover-glow bg-card-glass border-primary/20 flex flex-col overflow-hidden relative">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
-                  STORAGE
-                </CardTitle>
-                <HardDrive className="h-4 w-4 text-primary opacity-50" />
-              </CardHeader>
-              <CardContent className="pb-0 flex-1 flex flex-col justify-between z-10">
-                <div>
-                  <div className="text-4xl font-bold h-10 tracking-tight">
-                    {(stats?.searchStats?.workerResources?.systemStoragePercent || 0).toFixed(1)}<span className="text-xl text-muted-foreground font-normal ml-1">%</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2 flex justify-between">
-                    <span>Used: {( (stats?.searchStats?.workerResources?.systemStorageUsed || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
-                    <span>Total: {( (stats?.searchStats?.workerResources?.systemStorageTotal || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
-                  </p>
-                </div>
-
-                {/* Sparkline Chart */}
-                <div className="h-20 w-[calc(100%+3rem)] -mx-6 mt-4 opacity-70">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={stats?.searchStats?.workerResourcesHistory || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorStorage" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <Area type="monotone" dataKey="systemStoragePercent" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorStorage)" isAnimationActive={false} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="hover-glow bg-card-glass border-primary/20 flex flex-col overflow-hidden relative">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
-                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
                   SWAP
                 </CardTitle>
                 <ArrowLeftRight className="h-4 w-4 text-primary opacity-50" />
@@ -392,10 +223,91 @@ export function LiveStatsDisplay({
                 </div>
               </CardContent>
             </Card>
+            <Card className="hover-glow bg-card-glass border-primary/20 flex flex-col overflow-hidden relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+                  STORAGE
+                </CardTitle>
+                <HardDrive className="h-4 w-4 text-primary opacity-50" />
+              </CardHeader>
+              <CardContent className="pb-0 flex-1 flex flex-col justify-between z-10">
+                <div>
+                  <div className="text-4xl font-bold h-10 tracking-tight">
+                    {(stats?.searchStats?.workerResources?.systemStoragePercent || 0).toFixed(1)}<span className="text-xl text-muted-foreground font-normal ml-1">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 flex justify-between">
+                    <span>Used: {( (stats?.searchStats?.workerResources?.systemStorageUsed || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
+                    <span>Total: {( (stats?.searchStats?.workerResources?.systemStorageTotal || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
+                  </p>
+                </div>
+
+                {/* Sparkline Chart */}
+                <div className="h-20 w-[calc(100%+3rem)] -mx-6 mt-4 opacity-70">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats?.searchStats?.workerResourcesHistory || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorStorage" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="systemStoragePercent" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorStorage)" isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-
+        {/* Infrastructure Health */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Server className="h-5 w-5 text-primary" /> Infrastructure Health
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="hover-glow bg-card-glass border-primary/20">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Typesense Status
+                </CardTitle>
+                {stats?.searchStats?.typesense?.healthy ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-500 glow-text" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-red-500 glow-text" />
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold h-10">
+                  {stats?.searchStats?.typesense?.healthy
+                    ? 'Operational'
+                    : 'Degraded'}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Search cluster health
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="hover-glow bg-card-glass border-primary/20">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Indexed Documents
+                </CardTitle>
+                <Database className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <AnimatedNumber
+                  value={(
+                    stats?.searchStats?.typesense?.totalDocuments || 0
+                  ).toLocaleString()}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total searchable records
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Search Analytics */}
         <div>
