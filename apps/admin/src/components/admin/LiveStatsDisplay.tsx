@@ -248,46 +248,58 @@ export function LiveStatsDisplay({
             <Card className="hover-glow bg-card-glass border-primary/20">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Worker CPU
+                  System CPU
                 </CardTitle>
                 <Activity className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold h-10">
-                  {(stats?.searchStats?.workerResources?.cpu || 0).toFixed(1)}%
+                  {(stats?.searchStats?.workerResources?.systemCpu || 0).toFixed(1)}%
                 </div>
                 <div className="h-1.5 w-full bg-muted overflow-hidden rounded-full mt-2">
                   <div
                     className={`h-full transition-all duration-500 ${
-                      (stats?.searchStats?.workerResources?.cpu || 0) > 80
+                      (stats?.searchStats?.workerResources?.systemCpu || 0) > 80
                         ? 'bg-red-500'
                         : 'bg-primary'
                     }`}
                     style={{
-                      width: `${Math.min(stats?.searchStats?.workerResources?.cpu || 0, 100)}%`,
+                      width: `${Math.min(stats?.searchStats?.workerResources?.systemCpu || 0, 100)}%`,
                     }}
                   />
                 </div>
+                <p className="text-xs text-muted-foreground mt-2 flex justify-between">
+                  <span>Worker Load:</span>
+                  <span className="font-medium">{(stats?.searchStats?.workerResources?.cpu || 0).toFixed(1)}%</span>
+                </p>
               </CardContent>
             </Card>
             <Card className="hover-glow bg-card-glass border-primary/20">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Worker Memory
+                  System RAM
                 </CardTitle>
                 <Server className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold h-10">
-                  {(
-                    (stats?.searchStats?.workerResources?.memory || 0) /
-                    1024 /
-                    1024
-                  ).toFixed(1)}{' '}
-                  MB
+                  {(stats?.searchStats?.workerResources?.systemMemoryPercent || 0).toFixed(1)}%
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Process RAM usage
+                <div className="h-1.5 w-full bg-muted overflow-hidden rounded-full mt-2">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      (stats?.searchStats?.workerResources?.systemMemoryPercent || 0) > 80
+                        ? 'bg-red-500'
+                        : 'bg-primary'
+                    }`}
+                    style={{
+                      width: `${Math.min(stats?.searchStats?.workerResources?.systemMemoryPercent || 0, 100)}%`,
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 flex justify-between">
+                  <span>Worker: {( (stats?.searchStats?.workerResources?.memory || 0) / 1024 / 1024 ).toFixed(1)} MB</span>
+                  <span className="font-medium">Total: {( (stats?.searchStats?.workerResources?.systemMemoryTotal || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
                 </p>
               </CardContent>
             </Card>
