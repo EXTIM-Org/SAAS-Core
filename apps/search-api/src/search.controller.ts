@@ -69,8 +69,8 @@ export class SearchController {
         );
       }
 
-      // Get Worker System Stats and Analytics from Redis
       let workerResources = { cpu: 0, memory: 0 };
+      let workerResourcesHistory: any[] = [];
       let totalSearchesToday = 0;
       let searchLatencyMs = 0;
 
@@ -80,6 +80,16 @@ export class SearchController {
         );
         if (rawWorkerStats) {
           workerResources = JSON.parse(rawWorkerStats);
+        }
+
+        const rawHistory = await this.redisClient.lrange(
+          'worker:system:stats:history',
+          0,
+          -1
+        );
+        if (rawHistory && rawHistory.length > 0) {
+          // Redis lpush means latest is at index 0. We want chronological order for charts (oldest first).
+          workerResourcesHistory = rawHistory.map(item => JSON.parse(item)).reverse();
         }
 
         const searches = await this.redisClient.get('search_count:today');
@@ -160,6 +170,7 @@ export class SearchController {
           totalDocuments,
         },
         workerResources,
+        workerResourcesHistory,
         analytics: {
           latency: searchLatencyMs,
           totalSearches: totalSearchesToday,

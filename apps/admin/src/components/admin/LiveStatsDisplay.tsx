@@ -11,8 +11,11 @@ import {
   AlertCircle,
   CheckCircle2,
   RefreshCw,
+  HardDrive,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 // Animation variants for numbers
 const numberVariant = {
@@ -204,7 +207,7 @@ export function LiveStatsDisplay({
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Server className="h-5 w-5 text-primary" /> Infrastructure Health
           </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <Card className="hover-glow bg-card-glass border-primary/20">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -245,66 +248,154 @@ export function LiveStatsDisplay({
                 </p>
               </CardContent>
             </Card>
-            <Card className="hover-glow bg-card-glass border-primary/20">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  System CPU
+          </div>
+        </div>
+
+        {/* System Resources */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" /> System Resources
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="hover-glow bg-card-glass border-primary/20 flex flex-col overflow-hidden relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+                  CPU
                 </CardTitle>
-                <Activity className="h-4 w-4 text-primary" />
+                <Activity className="h-4 w-4 text-primary opacity-50" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold h-10">
-                  {(stats?.searchStats?.workerResources?.systemCpu || 0).toFixed(1)}%
+              <CardContent className="pb-0 flex-1 flex flex-col justify-between z-10">
+                <div>
+                  <div className="text-4xl font-bold h-10 tracking-tight">
+                    {(stats?.searchStats?.workerResources?.systemCpu || 0).toFixed(1)}<span className="text-xl text-muted-foreground font-normal ml-1">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Worker Load: <span className="font-medium text-foreground">{(stats?.searchStats?.workerResources?.cpu || 0).toFixed(1)}%</span>
+                  </p>
                 </div>
-                <div className="h-1.5 w-full bg-muted overflow-hidden rounded-full mt-2">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      (stats?.searchStats?.workerResources?.systemCpu || 0) > 80
-                        ? 'bg-red-500'
-                        : 'bg-primary'
-                    }`}
-                    style={{
-                      width: `${Math.min(stats?.searchStats?.workerResources?.systemCpu || 0, 100)}%`,
-                    }}
-                  />
+                
+                {/* Sparkline Chart */}
+                <div className="h-20 w-[calc(100%+3rem)] -mx-6 mt-4 opacity-70">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats?.searchStats?.workerResourcesHistory || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="systemCpu" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorCpu)" isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 flex justify-between">
-                  <span>Worker Load:</span>
-                  <span className="font-medium">{(stats?.searchStats?.workerResources?.cpu || 0).toFixed(1)}%</span>
-                </p>
               </CardContent>
             </Card>
-            <Card className="hover-glow bg-card-glass border-primary/20">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  System RAM
+            <Card className="hover-glow bg-card-glass border-primary/20 flex flex-col overflow-hidden relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+                  RAM
                 </CardTitle>
-                <Server className="h-4 w-4 text-primary" />
+                <Server className="h-4 w-4 text-primary opacity-50" />
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold h-10">
-                  {(stats?.searchStats?.workerResources?.systemMemoryPercent || 0).toFixed(1)}%
+              <CardContent className="pb-0 flex-1 flex flex-col justify-between z-10">
+                <div>
+                  <div className="text-4xl font-bold h-10 tracking-tight">
+                    {(stats?.searchStats?.workerResources?.systemMemoryPercent || 0).toFixed(1)}<span className="text-xl text-muted-foreground font-normal ml-1">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 flex justify-between">
+                    <span>Worker: {( (stats?.searchStats?.workerResources?.memory || 0) / 1024 / 1024 ).toFixed(1)} MB</span>
+                    <span>Total: {( (stats?.searchStats?.workerResources?.systemMemoryTotal || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
+                  </p>
                 </div>
-                <div className="h-1.5 w-full bg-muted overflow-hidden rounded-full mt-2">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      (stats?.searchStats?.workerResources?.systemMemoryPercent || 0) > 80
-                        ? 'bg-red-500'
-                        : 'bg-primary'
-                    }`}
-                    style={{
-                      width: `${Math.min(stats?.searchStats?.workerResources?.systemMemoryPercent || 0, 100)}%`,
-                    }}
-                  />
+
+                {/* Sparkline Chart */}
+                <div className="h-20 w-[calc(100%+3rem)] -mx-6 mt-4 opacity-70">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats?.searchStats?.workerResourcesHistory || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorRam" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="systemMemoryPercent" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorRam)" isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 flex justify-between">
-                  <span>Worker: {( (stats?.searchStats?.workerResources?.memory || 0) / 1024 / 1024 ).toFixed(1)} MB</span>
-                  <span className="font-medium">Total: {( (stats?.searchStats?.workerResources?.systemMemoryTotal || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
-                </p>
+              </CardContent>
+            </Card>
+            <Card className="hover-glow bg-card-glass border-primary/20 flex flex-col overflow-hidden relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+                  STORAGE
+                </CardTitle>
+                <HardDrive className="h-4 w-4 text-primary opacity-50" />
+              </CardHeader>
+              <CardContent className="pb-0 flex-1 flex flex-col justify-between z-10">
+                <div>
+                  <div className="text-4xl font-bold h-10 tracking-tight">
+                    {(stats?.searchStats?.workerResources?.systemStoragePercent || 0).toFixed(1)}<span className="text-xl text-muted-foreground font-normal ml-1">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 flex justify-between">
+                    <span>Used: {( (stats?.searchStats?.workerResources?.systemStorageUsed || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
+                    <span>Total: {( (stats?.searchStats?.workerResources?.systemStorageTotal || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
+                  </p>
+                </div>
+
+                {/* Sparkline Chart */}
+                <div className="h-20 w-[calc(100%+3rem)] -mx-6 mt-4 opacity-70">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats?.searchStats?.workerResourcesHistory || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorStorage" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="systemStoragePercent" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorStorage)" isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover-glow bg-card-glass border-primary/20 flex flex-col overflow-hidden relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10">
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+                  SWAP
+                </CardTitle>
+                <ArrowLeftRight className="h-4 w-4 text-primary opacity-50" />
+              </CardHeader>
+              <CardContent className="pb-0 flex-1 flex flex-col justify-between z-10">
+                <div>
+                  <div className="text-4xl font-bold h-10 tracking-tight">
+                    {(stats?.searchStats?.workerResources?.systemSwapPercent || 0).toFixed(1)}<span className="text-xl text-muted-foreground font-normal ml-1">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 flex justify-between">
+                    <span>Used: {( (stats?.searchStats?.workerResources?.systemSwapUsed || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
+                    <span>Total: {( (stats?.searchStats?.workerResources?.systemSwapTotal || 0) / 1024 / 1024 / 1024 ).toFixed(1)} GB</span>
+                  </p>
+                </div>
+
+                {/* Sparkline Chart */}
+                <div className="h-20 w-[calc(100%+3rem)] -mx-6 mt-4 opacity-70">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats?.searchStats?.workerResourcesHistory || []} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorSwap" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="systemSwapPercent" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorSwap)" isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+
 
         {/* Search Analytics */}
         <div>

@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import pidusage from 'pidusage';
 import Redis from 'ioredis';
 import * as os from 'os';
+import checkDiskSpace from 'check-disk-space';
+import * as si from 'systeminformation';
 
 @Injectable()
 export class SystemMonitorService {
@@ -51,6 +53,33 @@ export class SystemMonitorService {
       const usedMem = totalMem - freeMem;
       const sysMemPercentage = (usedMem / totalMem) * 100;
 
+      // System Storage calculation
+      const diskPath = process.platform === 'win32' ? 'C:/' : '/';
+      let sysStorageTotal = 0;
+      let sysStorageUsed = 0;
+      let sysStoragePercent = 0;
+      try {
+        const diskSpace = await checkDiskSpace(diskPath);
+        sysStorageTotal = diskSpace.size;
+        sysStorageUsed = diskSpace.size - diskSpace.free;
+        sysStoragePercent = diskSpace.size ? (sysStorageUsed / diskSpace.size) * 100 : 0;
+      } catch (err) {
+        this.logger.error(`Failed to check disk space for ${diskPath}`, err);
+      }
+
+      // System Swap calculation
+      let sysSwapTotal = 0;
+      let sysSwapUsed = 0;
+      let sysSwapPercent = 0;
+      try {
+        const memData = await si.mem();
+        sysSwapTotal = memData.swaptotal;
+        sysSwapUsed = memData.swapused;
+        sysSwapPercent = sysSwapTotal ? (sysSwapUsed / sysSwapTotal) * 100 : 0;
+      } catch (err) {
+        this.logger.error('Failed to get swap info', err);
+      }
+
       const payload = {
         // Process metrics
         cpu: stats.cpu, // process CPU percentage (from 0 to 100*vcore)
@@ -58,20 +87,37 @@ export class SystemMonitorService {
         
         // System metrics
         systemCpu: sysCpuPercentage,
-        systemMemoryUsed: usedMem,
         systemMemoryTotal: totalMem,
+        systemMemoryUsed: usedMem,
         systemMemoryPercent: sysMemPercentage,
+        systemStorageTotal: sysStorageTotal,
+        systemStorageUsed: sysStorageUsed,
+        systemStoragePercent: sysStoragePercent,
+        systemSwapTotal: sysSwapTotal,
+        systemSwapUsed: sysSwapUsed,
+        systemSwapPercent: sysSwapPercent,
         
         timestamp: new Date().toISOString(),
       };
 
-      // Set key with 15 second expiration in case worker dies
+      const payloadString = JSON.stringify(payload);
+
+      // Set key with 15 second expiration in case worker dies (current stats)
       await this.redis.set(
         'worker:system:stats',
-        JSON.stringify(payload),
+        payloadString,
         'EX',
         15,
       );
+
+      // Store historical stats in a list (keep last 120 items = 10 minutes)
+      const historyKey = 'worker:system:stats:history';
+      const pipeline = this.redis.pipeline();
+      pipeline.lpush(historyKey, payloadString);
+      pipeline.ltrim(historyKey, 0, 119); // 0 to 119 = 120 items
+      // Expire history if worker stops (e.g. after 10 mins)
+      pipeline.expire(historyKey, 600);
+      await pipeline.exec();
     } catch (err) {
       this.logger.error('Failed to report system stats', err);
     }
