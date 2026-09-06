@@ -28,6 +28,7 @@ import {
   startWith,
   merge,
   map,
+  throttleTime,
 } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { QueueEvents } from 'bullmq';
@@ -125,9 +126,9 @@ export class AdminController {
   ): Observable<MessageEvent> {
     const authHeader = authorization || (token ? `Bearer ${token}` : undefined);
 
-    // We emit immediately, and then whenever queue events occur
+    // We emit immediately, and then whenever queue events occur, throttled to max 1 per 2s
     return merge(
-      this.queueEventsSubject.pipe(startWith(null)), // emit immediately
+      this.queueEventsSubject.pipe(throttleTime(2000), startWith(null)), // emit immediately & throttle
       interval(10000), // fallback heartbeat every 10s
     ).pipe(
       switchMap(async () => {

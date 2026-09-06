@@ -32,7 +32,8 @@ export function DashboardClientLayout({
   ];
 
   if (user?.role === 'SUPER_ADMIN') {
-    navigation.push({ name: 'Admin Panel', href: '/admin', icon: ShieldAlert });
+    const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3002';
+    navigation.push({ name: 'Admin Panel', href: adminUrl, icon: ShieldAlert });
   }
 
   return (

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { loginAction } from '@/app/actions/auth';
 import { Button } from '@/components/ui/button';
@@ -26,9 +26,16 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const {
     register,
@@ -46,7 +53,12 @@ export default function LoginPage() {
         setError(result.error);
         return;
       }
-      router.push('/dashboard');
+      
+      if (redirectUrl && redirectUrl.startsWith('http')) {
+        window.location.href = redirectUrl;
+      } else {
+        window.location.href = redirectUrl || '/dashboard';
+      }
     } catch (err: unknown) {
       setError((err as Error).message || 'Failed to log in');
     }
@@ -60,7 +72,9 @@ export default function LoginPage() {
           Enter your email and password to log in to your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} method="POST" action="#" onSubmitCapture={(e) => {
+        if (!mounted) e.preventDefault();
+      }}>
         <CardContent className="space-y-4">
           {error && (
             <div className="text-sm font-medium text-destructive">{error}</div>
@@ -88,8 +102,8 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Signing in...' : 'Sign in'}
+          <Button type="submit" className="w-full" disabled={!mounted || isSubmitting}>
+            {!mounted ? 'Loading...' : isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
           <div className="text-sm text-center text-muted-foreground">
             Don&apos;t have an account?{' '}
@@ -103,5 +117,13 @@ export default function LoginPage() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

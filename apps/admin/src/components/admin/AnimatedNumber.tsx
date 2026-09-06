@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 // Animation variants for numbers
-const numberVariant = {
+const numberVariant: Variants = {
   initial: { opacity: 0, y: -10 },
   animate: {
     opacity: 1,
