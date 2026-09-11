@@ -3,10 +3,16 @@ import type { Request } from 'express';
 import { UserPayload } from '@saas/shared';
 
 export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (data: string | undefined, ctx: ExecutionContext) => {
     const request = ctx
       .switchToHttp()
-      .getRequest<Request & { user: UserPayload & { email: string } }>();
+      .getRequest<Request & { user: any }>();
+    if (!request.user) {
+      return null;
+    }
+    if (data) {
+      return request.user[data] ?? (data === 'userId' ? (request.user.id ?? request.user.sub) : undefined);
+    }
     return request.user;
   },
 );

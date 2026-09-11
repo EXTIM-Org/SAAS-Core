@@ -37,9 +37,7 @@ export default async function AdminDashboardPage() {
   const token = cookieStore.get('token')?.value;
 
   if (!token) {
-    const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001';
-    const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3002';
-    redirect(`${dashboardUrl}/login?redirect=${encodeURIComponent(adminUrl)}`);
+    redirect('/login');
   }
 
   const stats = await getStats(token);
@@ -135,8 +133,7 @@ export default async function AdminDashboardPage() {
                     'use server';
                     const cookieStore = await cookies();
                     cookieStore.delete('token');
-                    const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001';
-                    redirect(`${dashboardUrl}/login`);
+                    redirect('/login');
                   }}
                 >
                   <Button

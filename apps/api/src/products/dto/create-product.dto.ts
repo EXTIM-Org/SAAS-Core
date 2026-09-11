@@ -29,4 +29,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  @ApiPropertyOptional({ description: 'Domain ID this product belongs to' })
+  @IsOptional()
+  @IsUUID()
+  domainId?: string;
 }

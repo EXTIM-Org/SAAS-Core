@@ -27,7 +27,7 @@ export class SearchController {
     @Inject('TYPESENSE_CLIENT') private readonly typesenseClient: Client,
     @InjectQueue('crawl-queue') private readonly crawlQueue: Queue,
   ) {
-    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+    const redisUrl = process.env.REDIS_URL || 'redis://192.168.137.113:6379';
     this.redisClient = new Redis(redisUrl, { maxRetriesPerRequest: null });
   }
 
@@ -482,6 +482,7 @@ export class SearchController {
       name: string;
       description?: string;
       price?: number;
+      domain?: string;
     },
     @Headers('authorization') authorization?: string,
   ) {
@@ -524,6 +525,17 @@ export class SearchController {
 
     if (!body.url || !body.domain) {
       throw new NotFoundException('Missing url or domain');
+    }
+
+    // 1. Clear Redis caches
+    try {
+      const keys = await this.redisClient.keys(`crawled:${projectId}:${body.domain}:*`);
+      keys.push(`visited:${projectId}:${body.domain}`);
+      if (keys.length > 0) {
+        await this.redisClient.del(...keys);
+      }
+    } catch (err) {
+      console.error('Error clearing redis cache before manual crawl:', err);
     }
 
     await this.crawlQueue.add('crawl-job', {
@@ -824,8 +836,12 @@ export class SearchController {
         // Find all crawled keys for this project
         const keys = await this.redisClient.keys(`crawled:${projectId}:*`);
 
-        // Add the visited set key
-        keys.push(`visited:${projectId}`);
+        // We delete all visited keys for the project by pattern matching if possible
+        // But since we are clearing the entire project queue, we might want to just fetch them
+        const visitedKeys = await this.redisClient.keys(`visited:${projectId}:*`);
+        if (visitedKeys.length > 0) {
+          keys.push(...visitedKeys);
+        }
 
         if (keys.length > 0) {
           await this.redisClient.del(...keys);
@@ -834,22 +850,86 @@ export class SearchController {
         // Signal active workers to stop immediately
         await this.redisClient.set(`cancel_crawl:${projectId}`, '1', 'EX', 60);
       } catch (err) {
-        console.error(
-          'Error clearing Redis cache::',
-          err instanceof Error ? err.message : err,
-        );
+        console.error('Error clearing redis cache for queue:', err);
       }
 
       return {
         success: true,
-        message: `Cleared ${deletedCount} jobs from the queue and reset crawler cache.`,
+        message: `Queue cleared for project. Deleted ${deletedCount} jobs.`,
       };
     } catch (error) {
-      console.error(
-        'Error clearing queue::',
-        error instanceof Error ? error.message : error,
-      );
+      console.error('Error clearing queue::', error);
       throw new NotFoundException('Failed to clear queue');
+    }
+  }
+
+  @Delete('projects/:projectId/domains/:domainName')
+  async deleteDomainData(
+    @Param('projectId') projectId: string,
+    @Param('domainName') domainName: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const isValid = await this.coreApiClientService.validateProject(
+      projectId,
+      authorization,
+    );
+
+    if (!isValid) {
+      throw new NotFoundException(
+        `Project with ID ${projectId} not found or unauthorized`,
+      );
+    }
+
+    try {
+      // 1. Delete documents from Typesense
+      await this.typesenseClient
+        .collections('documents')
+        .documents()
+        .delete({ filter_by: `projectId:=${projectId} && domain:=${domainName}` })
+        .catch((e) => console.error('Failed to delete documents for domain', e));
+
+      // 2. Delete products from Typesense
+      await this.typesenseClient
+        .collections('products')
+        .documents()
+        .delete({ filter_by: `projectId:=${projectId} && domain:=${domainName}` })
+        .catch((e) => console.error('Failed to delete products for domain', e));
+
+      // 3. Remove pending, active, failed, and completed crawl jobs for this domain
+      const jobs = await this.crawlQueue.getJobs([
+        'waiting',
+        'active',
+        'delayed',
+        'failed',
+        'prioritized',
+        'completed',
+      ]);
+      const domainJobs = jobs.filter((j) => j.data?.projectId === projectId && j.data?.domain === domainName);
+      
+      const chunkSize = 500;
+      for (let i = 0; i < domainJobs.length; i += chunkSize) {
+        const chunk = domainJobs.slice(i, i + chunkSize);
+        await Promise.all(chunk.map((job) => job.remove().catch(() => {})));
+      }
+
+      // 4. Clear Redis cache keys for this domain
+      try {
+        const keys = await this.redisClient.keys(`crawled:${projectId}:${domainName}:*`);
+        keys.push(`visited:${projectId}:${domainName}`);
+        if (keys.length > 0) {
+          await this.redisClient.del(...keys);
+        }
+      } catch (err) {
+        console.error('Error clearing redis cache for domain:', err);
+      }
+
+      return {
+        success: true,
+        message: `All data related to domain ${domainName} has been deleted.`,
+      };
+    } catch (error) {
+      console.error(`Error deleting domain data for ${domainName}::`, error);
+      throw new NotFoundException('Failed to delete domain data');
     }
   }
 

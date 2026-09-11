@@ -40,7 +40,7 @@ export class CrawlSchedulerService {
           domain.project.autoCrawlIntervalDays ?? defaultInterval;
         if (interval === 0) return false;
 
-        if (!domain.lastCrawledAt) return false;
+        if (!domain.lastCrawledAt) return true;
 
         const nextCrawlTime = new Date(domain.lastCrawledAt);
         nextCrawlTime.setDate(nextCrawlTime.getDate() + interval);
@@ -55,7 +55,7 @@ export class CrawlSchedulerService {
       this.logger.log(`Found ${domainsToCrawl.length} domains to re-crawl.`);
 
       const redis = new Redis({
-        host: this.configService.get<string>('REDIS_HOST') || '127.0.0.1',
+        host: this.configService.get<string>('REDIS_HOST') || '192.168.137.113',
         port: parseInt(
           this.configService.get<string>('REDIS_PORT') || '6379',
           10,
@@ -72,7 +72,7 @@ export class CrawlSchedulerService {
 
         // 1. Clear Redis caches
         const keys = await redis.keys(`crawled:${projectId}:*`);
-        keys.push(`visited:${projectId}`);
+        keys.push(`visited:${projectId}:${domain.name}`);
         if (keys.length > 0) {
           await redis.del(...keys);
         }

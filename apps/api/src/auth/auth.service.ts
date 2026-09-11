@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { User } from '@saas/database';
 import * as bcrypt from 'bcryptjs';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { EmailService } from '../notifications/email/email.service';
@@ -17,8 +18,18 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  private async generateTokens(user: any, impersonatorId?: string) {
-    const payload: any = { sub: user.id, email: user.email, role: user.role };
+  private async generateTokens(
+    user: Partial<User> & { userId?: string; sub?: string; role?: string },
+    impersonatorId?: string,
+  ) {
+    const userId = user.id || user.userId || user.sub;
+    const payload: Record<string, unknown> = {
+      sub: userId,
+      id: userId,
+      userId,
+      email: user.email,
+      role: user.role,
+    };
     if (impersonatorId) {
       payload.impersonatorId = impersonatorId;
     }
@@ -32,7 +43,9 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    await this.usersService.updateRefreshToken(user.id, refreshToken);
+    if (userId) {
+      await this.usersService.updateRefreshToken(userId, refreshToken);
+    }
 
     return {
       accessToken,
@@ -117,7 +130,7 @@ export class AuthService {
       }
 
       return this.generateTokens(user);
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }

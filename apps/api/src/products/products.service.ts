@@ -28,12 +28,24 @@ export class ProductsService {
         this.configService.get<string>('SEARCH_API_URL') ||
         'http://localhost:3002';
 
+      let domainName: string | undefined;
+      if (product.domainId) {
+        const domain = await this.prisma.domain.findUnique({
+          where: { id: product.domainId },
+          select: { name: true },
+        });
+        if (domain) {
+          domainName = domain.name;
+        }
+      }
+
       const payload = {
         productId: product.id,
         projectId: product.projectId,
         name: product.name,
         description: product.description,
         price: product.price ? Number(product.price) : undefined,
+        domain: domainName,
       };
 
       await firstValueFrom(
@@ -65,6 +77,15 @@ export class ProductsService {
       throw new UnauthorizedException(
         'You do not have permission to add products to this project',
       );
+    }
+
+    if (productData.domainId) {
+      const domain = await this.prisma.domain.findFirst({
+        where: { id: productData.domainId, projectId },
+      });
+      if (!domain) {
+        throw new NotFoundException('Domain not found in this project');
+      }
     }
 
     const product = await this.prisma.product.create({
@@ -151,6 +172,16 @@ export class ProductsService {
         throw new UnauthorizedException(
           'You do not own the target project for this product update or it does not exist',
         );
+      }
+    }
+
+    if (updateData.domainId) {
+      const targetProjectId = projectId || product.projectId;
+      const domain = await this.prisma.domain.findFirst({
+        where: { id: updateData.domainId, projectId: targetProjectId },
+      });
+      if (!domain) {
+        throw new NotFoundException('Domain not found in this project');
       }
     }
 

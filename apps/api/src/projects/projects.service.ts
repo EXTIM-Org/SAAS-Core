@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -8,6 +8,9 @@ export class ProjectsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, createProjectDto: CreateProjectDto) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required to create a project');
+    }
     return this.prisma.project.create({
       data: {
         ...createProjectDto,

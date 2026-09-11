@@ -8,6 +8,7 @@ import {
   UseGuards,
   Query,
   BadRequestException,
+  Headers,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,8 +40,9 @@ export class DomainsController {
   create(
     @CurrentUser() user: { userId: string },
     @Body() createDomainDto: CreateDomainDto,
+    @Headers('authorization') authorization?: string,
   ) {
-    return this.domainsService.create(user.userId, createDomainDto);
+    return this.domainsService.create(user.userId, createDomainDto, authorization);
   }
 
   @Get()
@@ -73,7 +75,11 @@ export class DomainsController {
     status: 404,
     description: 'Domain not found or unauthorized.',
   })
-  remove(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
-    return this.domainsService.remove(user.userId, id);
+  remove(
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    return this.domainsService.remove(user.userId, id, authorization);
   }
 }

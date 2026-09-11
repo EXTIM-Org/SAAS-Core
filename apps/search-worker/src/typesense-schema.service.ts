@@ -69,6 +69,7 @@ export class TypesenseSchemaService implements OnModuleInit {
           fields: [
             { name: 'id', type: 'string' },
             { name: 'projectId', type: 'string', facet: true },
+            { name: 'domain', type: 'string', facet: true },
             { name: 'title', type: 'string' },
             { name: 'description', type: 'string', optional: true },
             { name: 'url', type: 'string' },

@@ -38,17 +38,19 @@ export class ProjectsController {
     description: 'The project has been successfully created.',
   })
   create(
-    @CurrentUser() user: { userId: string },
+    @CurrentUser() user: any,
     @Body() createProjectDto: CreateProjectDto,
   ) {
-    return this.projectsService.create(user.userId, createProjectDto);
+    const userId = user?.userId || user?.id || user?.sub;
+    return this.projectsService.create(userId, createProjectDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all projects for the current user' })
   @ApiResponse({ status: 200, description: 'Returns an array of projects.' })
-  findAll(@CurrentUser() user: { userId: string }) {
-    return this.projectsService.findAll(user.userId);
+  findAll(@CurrentUser() user: any) {
+    const userId = user?.userId || user?.id || user?.sub;
+    return this.projectsService.findAll(userId);
   }
 
   @Get(':id')
@@ -60,10 +62,11 @@ export class ProjectsController {
     description: 'Project not found or unauthorized.',
   })
   findOne(
-    @CurrentUser() user: { userId: string; role: string },
+    @CurrentUser() user: any,
     @Param('id') id: string,
   ) {
-    return this.projectsService.findOne(user, id);
+    const userId = user?.userId || user?.id || user?.sub;
+    return this.projectsService.findOne({ userId, role: user?.role }, id);
   }
 
   @Patch(':id')
@@ -77,11 +80,12 @@ export class ProjectsController {
     description: 'Project not found or unauthorized.',
   })
   update(
-    @CurrentUser() user: { userId: string; role: string },
+    @CurrentUser() user: any,
     @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
-    return this.projectsService.update(user, id, updateProjectDto);
+    const userId = user?.userId || user?.id || user?.sub;
+    return this.projectsService.update({ userId, role: user?.role }, id, updateProjectDto);
   }
 
   @Delete(':id')
@@ -95,9 +99,10 @@ export class ProjectsController {
     description: 'Project not found or unauthorized.',
   })
   remove(
-    @CurrentUser() user: { userId: string; role: string },
+    @CurrentUser() user: any,
     @Param('id') id: string,
   ) {
-    return this.projectsService.remove(user, id);
+    const userId = user?.userId || user?.id || user?.sub;
+    return this.projectsService.remove({ userId, role: user?.role }, id);
   }
 }

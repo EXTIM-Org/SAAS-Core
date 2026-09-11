@@ -46,7 +46,7 @@ export class CrawlProcessor extends WorkerHost {
     const redisUrl =
       process.env.REDIS_URL ||
       process.env.REDIS_URL_DOCKER ||
-      'redis://127.0.0.1:6379';
+      'redis://192.168.137.113:6379';
     this.redisClient = new Redis(redisUrl);
     this.httpsAgent = new https.Agent({
       rejectUnauthorized: false,
@@ -85,7 +85,7 @@ export class CrawlProcessor extends WorkerHost {
       return;
     }
 
-    const visitedKey = `visited:${projectId}`;
+    const visitedKey = `visited:${projectId}:${domain}`;
 
     // Mark current URL as visited to prevent duplicate crawling
     await this.redisClient.sadd(visitedKey, url);
@@ -402,6 +402,7 @@ export class CrawlProcessor extends WorkerHost {
         const productDocument = {
           id: documentId,
           projectId,
+          domain,
           title: productData.name,
           description: productData.description || content.substring(0, 200),
           url,
@@ -432,7 +433,7 @@ export class CrawlProcessor extends WorkerHost {
       `Processing index-product job ${job.id} for Product: ${job.data.productId}`,
     );
 
-    const { projectId, productId, name, description, price } = job.data;
+    const { projectId, productId, name, description, price, domain } = job.data;
 
     if (!projectId || !productId || !name) {
       this.logger.error(
@@ -444,9 +445,10 @@ export class CrawlProcessor extends WorkerHost {
     const document = {
       id: productId,
       projectId,
-      name,
+      title: name,
       description,
       price,
+      domain,
     };
 
     try {

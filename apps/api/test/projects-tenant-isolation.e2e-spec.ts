@@ -67,14 +67,14 @@ describe('Projects - Tenant Isolation (e2e)', () => {
       .patch(`/projects/${projectAId}`)
       .set('Authorization', `Bearer ${tokenB}`)
       .send({ name: 'Hacked Project A' })
-      .expect(404);
+      .expect(403);
   });
 
   it('User B cannot delete Project A (DELETE /projects/:id)', async () => {
     await request(app.getHttpServer())
       .delete(`/projects/${projectAId}`)
       .set('Authorization', `Bearer ${tokenB}`)
-      .expect(404);
+      .expect(403);
   });
 
   it('Unauthenticated user cannot read Project A', async () => {

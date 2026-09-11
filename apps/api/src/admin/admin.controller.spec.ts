@@ -1,6 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminController } from './admin.controller';
 import { PrismaService } from '../prisma/prisma.service';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+
+jest.mock('ioredis', () => {
+  return jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+  }));
+});
+
+jest.mock('bullmq', () => ({
+  QueueEvents: jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+  })),
+}));
 
 describe('AdminController', () => {
   let controller: AdminController;
@@ -23,6 +37,18 @@ describe('AdminController', () => {
             },
           },
         },
+        {
+          provide: HttpService,
+          useValue: {
+            get: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue(null),
+          },
+        },
       ],
     }).compile();
 
@@ -37,7 +63,7 @@ describe('AdminController', () => {
   describe('getStats', () => {
     it('should return statistics', async () => {
       const stats = await controller.getStats();
-      expect(stats).toEqual({
+      expect(stats).toMatchObject({
         totalUsers: 10,
         totalProjects: 5,
         totalOrders: 20,

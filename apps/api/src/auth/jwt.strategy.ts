@@ -1,6 +1,6 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -21,8 +21,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: { sub: string; email: string; role: string; impersonatorId?: string }) {
-    const user: any = { userId: payload.sub, email: payload.email, role: payload.role };
+  validate(payload: any) {
+    const userId = payload?.sub || payload?.userId || payload?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Invalid token: missing user identifier');
+    }
+    const user: any = {
+      userId,
+      id: userId,
+      sub: userId,
+      email: payload.email,
+      role: payload.role,
+    };
     if (payload.impersonatorId) {
       user.impersonatorId = payload.impersonatorId;
     }
