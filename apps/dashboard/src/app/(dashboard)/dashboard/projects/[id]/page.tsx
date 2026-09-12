@@ -19,6 +19,7 @@ import {
   getProjectProductsAction,
   deleteProjectProductAction,
   deleteAllProjectProductsAction,
+  getDomainProgressAction,
 } from '@/app/actions/search';
 import DashboardLoading from '../../loading';
 import { Button } from '@/components/ui/button';
@@ -485,26 +486,12 @@ export default function ProjectDetailsPage() {
                 ) : (
                   <ul className="divide-y">
                     {domains.map((domain) => (
-                      <li
+                      <DomainListItem
                         key={domain.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4"
-                      >
-                        <span className="font-medium truncate">
-                          {domain.name}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteDomain(domain.id)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            title="Delete Domain"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </div>
-                      </li>
+                        domain={domain}
+                        projectId={projectId}
+                        onDelete={() => handleDeleteDomain(domain.id)}
+                      />
                     ))}
                   </ul>
                 )}
@@ -860,17 +847,20 @@ export default function ProjectDetailsPage() {
                 Indexed Products
               </CardTitle>
               <CardDescription>
-                Products automatically detected and indexed by the crawler. Total: {productsTotal}
+                Products automatically detected and indexed by the crawler.
+                Total: {productsTotal}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => fetchProducts(true)}
                 disabled={isLoadingProducts}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${isLoadingProducts ? 'animate-spin' : ''}`}
+                />
                 Refresh
               </Button>
               <Button
@@ -897,32 +887,41 @@ export default function ProjectDetailsPage() {
               <div className="text-center p-8 text-muted-foreground bg-muted/20">
                 <Package className="w-12 h-12 text-muted mx-auto mb-3" />
                 <p className="font-medium text-foreground">No products found</p>
-                <p className="text-sm mt-1">The crawler hasn't found any valid e-commerce products yet.</p>
+                <p className="text-sm mt-1">
+                  The crawler hasn't found any valid e-commerce products yet.
+                </p>
               </div>
             ) : (
               <div className="bg-muted/10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
                   {indexedProducts.map((product) => (
-                    <div key={product.id} className="group flex flex-col bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 overflow-hidden">
+                    <div
+                      key={product.id}
+                      className="group flex flex-col bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 overflow-hidden"
+                    >
                       {/* Image Area */}
                       <div className="relative aspect-square bg-card border-b border-border overflow-hidden flex items-center justify-center p-6">
                         {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt={product.title} 
+                          <img
+                            src={product.image_url}
+                            alt={product.title}
                             referrerPolicy="no-referrer"
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
+                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
                           <Package className="w-16 h-16 text-muted-foreground/30" />
                         )}
-                        
+
                         <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm ${product.in_stock === false ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}`}>
-                            {product.in_stock === false ? 'Out of Stock' : 'In Stock'}
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm ${product.in_stock === false ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}`}
+                          >
+                            {product.in_stock === false
+                              ? 'Out of Stock'
+                              : 'In Stock'}
                           </span>
                         </div>
-                        
+
                         <div className="absolute top-3 left-3 z-10">
                           <Button
                             variant="destructive"
@@ -940,33 +939,45 @@ export default function ProjectDetailsPage() {
                           </Button>
                         </div>
                       </div>
-                      
+
                       {/* Content Area */}
                       <div className="p-5 flex flex-col flex-1">
                         {product.brand && (
-                          <span className="text-xs font-semibold text-primary mb-1.5 uppercase tracking-wide">{product.brand}</span>
+                          <span className="text-xs font-semibold text-primary mb-1.5 uppercase tracking-wide">
+                            {product.brand}
+                          </span>
                         )}
-                        <h4 className="font-medium text-foreground text-sm line-clamp-2 leading-snug mb-3 flex-1" title={product.title}>
+                        <h4
+                          className="font-medium text-foreground text-sm line-clamp-2 leading-snug mb-3 flex-1"
+                          title={product.title}
+                        >
                           {product.title}
                         </h4>
-                        
+
                         <div className="mt-auto pt-3 border-t border-border flex items-end justify-between gap-2">
                           <div>
-                            <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Price</div>
+                            <div className="text-[10px] text-muted-foreground font-medium mb-0.5">
+                              Price
+                            </div>
                             <div className="text-sm font-bold text-foreground">
                               {product.price ? (
                                 <>
-                                  {product.price.toLocaleString()} <span className="text-xs font-normal text-muted-foreground ml-0.5">{product.currency || 'Toman'}</span>
+                                  {product.price.toLocaleString()}{' '}
+                                  <span className="text-xs font-normal text-muted-foreground ml-0.5">
+                                    {product.currency || 'Toman'}
+                                  </span>
                                 </>
                               ) : (
-                                <span className="text-muted-foreground font-normal">Contact for price</span>
+                                <span className="text-muted-foreground font-normal">
+                                  Contact for price
+                                </span>
                               )}
                             </div>
                           </div>
-                          <a 
-                            href={product.url} 
-                            target="_blank" 
-                            rel="noreferrer" 
+                          <a
+                            href={product.url}
+                            target="_blank"
+                            rel="noreferrer"
                             className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
                             title="View original product"
                           >
@@ -989,15 +1000,24 @@ export default function ProjectDetailsPage() {
                         variant="outline"
                         size="sm"
                         disabled={productsPage === 1 || isLoadingProducts}
-                        onClick={() => setProductsPage(prev => Math.max(1, prev - 1))}
+                        onClick={() =>
+                          setProductsPage((prev) => Math.max(1, prev - 1))
+                        }
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={productsPage === productsTotalPages || isLoadingProducts}
-                        onClick={() => setProductsPage(prev => Math.min(productsTotalPages, prev + 1))}
+                        disabled={
+                          productsPage === productsTotalPages ||
+                          isLoadingProducts
+                        }
+                        onClick={() =>
+                          setProductsPage((prev) =>
+                            Math.min(productsTotalPages, prev + 1),
+                          )
+                        }
                       >
                         <ChevronRight className="w-4 h-4" />
                       </Button>
@@ -1010,5 +1030,92 @@ export default function ProjectDetailsPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function DomainListItem({
+  domain,
+  projectId,
+  onDelete,
+}: {
+  domain: Domain;
+  projectId: string;
+  onDelete: () => void;
+}) {
+  const [progress, setProgress] = useState<{
+    total: number;
+    processed: number;
+    status: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    const fetchProgress = async () => {
+      const res = await getDomainProgressAction(projectId, domain.name);
+      if (res.success) {
+        setProgress({
+          total: res.total,
+          processed: res.processed,
+          status: res.status,
+        });
+      }
+    };
+
+    fetchProgress();
+
+    interval = setInterval(() => {
+      fetchProgress();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [projectId, domain.name]);
+
+  const percentage =
+    progress && progress.total > 0
+      ? Math.min(100, Math.round((progress.processed / progress.total) * 100))
+      : 0;
+
+  return (
+    <li className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+      <div className="flex flex-col gap-1 w-full max-w-md">
+        <span className="font-medium truncate">{domain.name}</span>
+        {progress && progress.total > 0 && progress.status !== 'COMPLETED' && (
+          <div className="flex flex-col gap-1 mt-2">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>
+                {progress.status === 'CRAWLING' ? 'Crawling...' : 'Pending'}
+              </span>
+              <span>
+                {progress.processed} / {progress.total} pages
+              </span>
+            </div>
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border">
+              <div
+                className="h-full bg-primary transition-all duration-500 ease-in-out"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {progress?.status === 'COMPLETED' && (
+          <span className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
+            Crawling completed
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          title="Delete Domain"
+        >
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Delete</span>
+        </Button>
+      </div>
+    </li>
   );
 }

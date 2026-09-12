@@ -85,11 +85,13 @@ export class SearchController {
         const rawHistory = await this.redisClient.lrange(
           'worker:system:stats:history',
           0,
-          -1
+          -1,
         );
         if (rawHistory && rawHistory.length > 0) {
           // Redis lpush means latest is at index 0. We want chronological order for charts (oldest first).
-          workerResourcesHistory = rawHistory.map(item => JSON.parse(item)).reverse();
+          workerResourcesHistory = rawHistory
+            .map((item) => JSON.parse(item))
+            .reverse();
         }
 
         const searches = await this.redisClient.get('search_count:today');
@@ -527,13 +529,27 @@ export class SearchController {
       throw new NotFoundException('Missing url or domain');
     }
 
-    // 1. Clear Redis caches
+    // 1. Clear Redis caches and initialize progress counters
     try {
-      const keys = await this.redisClient.keys(`crawled:${projectId}:${body.domain}:*`);
+      const keys = await this.redisClient.keys(
+        `crawled:${projectId}:${body.domain}:*`,
+      );
       keys.push(`visited:${projectId}:${body.domain}`);
+      keys.push(`sitemap_discovered:${projectId}:${body.domain}`);
+      keys.push(`cancel_domain:${projectId}:${body.domain}`);
       if (keys.length > 0) {
         await this.redisClient.del(...keys);
       }
+
+      // Initialize progress counters
+      await this.redisClient.set(
+        `crawl_progress:${projectId}:${body.domain}:total`,
+        1,
+      );
+      await this.redisClient.set(
+        `crawl_progress:${projectId}:${body.domain}:processed`,
+        0,
+      );
     } catch (err) {
       console.error('Error clearing redis cache before manual crawl:', err);
     }
@@ -563,6 +579,46 @@ export class SearchController {
     }
 
     return { success: true, message: 'URL added to crawl queue' };
+  }
+
+  @Get('projects/:projectId/domains/:domainName/progress')
+  async getDomainProgress(
+    @Param('projectId') projectId: string,
+    @Param('domainName') domainName: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const isValid = await this.coreApiClientService.validateProject(
+      projectId,
+      authorization,
+    );
+
+    if (!isValid) {
+      throw new NotFoundException(
+        `Project with ID ${projectId} not found or unauthorized`,
+      );
+    }
+
+    try {
+      const totalStr = await this.redisClient.get(
+        `crawl_progress:${projectId}:${domainName}:total`,
+      );
+      const processedStr = await this.redisClient.get(
+        `crawl_progress:${projectId}:${domainName}:processed`,
+      );
+
+      const total = totalStr ? parseInt(totalStr, 10) : 0;
+      const processed = processedStr ? parseInt(processedStr, 10) : 0;
+
+      let status = 'PENDING';
+      if (total > 0) {
+        status = processed >= total ? 'COMPLETED' : 'CRAWLING';
+      }
+
+      return { success: true, total, processed, status };
+    } catch (err) {
+      console.error('Error fetching crawl progress:', err);
+      return { success: false, total: 0, processed: 0, status: 'ERROR' };
+    }
   }
 
   @Get(':projectId/documents')
@@ -838,7 +894,9 @@ export class SearchController {
 
         // We delete all visited keys for the project by pattern matching if possible
         // But since we are clearing the entire project queue, we might want to just fetch them
-        const visitedKeys = await this.redisClient.keys(`visited:${projectId}:*`);
+        const visitedKeys = await this.redisClient.keys(
+          `visited:${projectId}:*`,
+        );
         if (visitedKeys.length > 0) {
           keys.push(...visitedKeys);
         }
@@ -885,37 +943,85 @@ export class SearchController {
       await this.typesenseClient
         .collections('documents')
         .documents()
-        .delete({ filter_by: `projectId:=${projectId} && domain:=${domainName}` })
-        .catch((e) => console.error('Failed to delete documents for domain', e));
+        .delete({
+          filter_by: `projectId:=${projectId} && domain:=${domainName}`,
+        })
+        .catch((e) =>
+          console.error('Failed to delete documents for domain', e),
+        );
 
       // 2. Delete products from Typesense
       await this.typesenseClient
         .collections('products')
         .documents()
-        .delete({ filter_by: `projectId:=${projectId} && domain:=${domainName}` })
+        .delete({
+          filter_by: `projectId:=${projectId} && domain:=${domainName}`,
+        })
         .catch((e) => console.error('Failed to delete products for domain', e));
 
-      // 3. Remove pending, active, failed, and completed crawl jobs for this domain
-      const jobs = await this.crawlQueue.getJobs([
-        'waiting',
-        'active',
-        'delayed',
-        'failed',
-        'prioritized',
-        'completed',
-      ]);
-      const domainJobs = jobs.filter((j) => j.data?.projectId === projectId && j.data?.domain === domainName);
-      
-      const chunkSize = 500;
-      for (let i = 0; i < domainJobs.length; i += chunkSize) {
-        const chunk = domainJobs.slice(i, i + chunkSize);
-        await Promise.all(chunk.map((job) => job.remove().catch(() => {})));
-      }
+      // 3. Set a domain-specific cancellation flag in Redis so the worker skips immediately.
+      await this.redisClient.setex(
+        `cancel_domain:${projectId}:${domainName}`,
+        86400 * 7,
+        '1',
+      );
+
+      // Start a background process to slowly clean up jobs without blocking the API or causing OOM
+      setImmediate(async () => {
+        try {
+          // Only target statuses that can be safely removed without locking issues.
+          // Active jobs will be handled and skipped by the worker itself.
+          const statuses: any[] = ['waiting', 'delayed', 'prioritized'];
+          for (const status of statuses) {
+            let start = 0;
+            const step = 500;
+            while (true) {
+              // Fetch jobs in chunks
+              const jobsChunk = await this.crawlQueue.getJobs(
+                [status],
+                start,
+                start + step - 1,
+                true,
+              );
+              if (!jobsChunk || jobsChunk.length === 0) break;
+
+              const domainJobs = jobsChunk.filter(
+                (j) =>
+                  j.data?.projectId === projectId &&
+                  j.data?.domain === domainName,
+              );
+
+              if (domainJobs.length > 0) {
+                const results = await Promise.allSettled(
+                  domainJobs.map((job) => job.remove()),
+                );
+                const failedCount = results.filter(
+                  (r) => r.status === 'rejected',
+                ).length;
+                const removedCount = domainJobs.length - failedCount;
+
+                // If we removed jobs, the queue shifted left by removedCount.
+                // We advance start by the number of jobs we did NOT remove to avoid skipping or infinite loops.
+                start += step - removedCount;
+              } else {
+                start += step;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Background cleanup of jobs failed:', e);
+        }
+      });
 
       // 4. Clear Redis cache keys for this domain
       try {
-        const keys = await this.redisClient.keys(`crawled:${projectId}:${domainName}:*`);
+        const keys = await this.redisClient.keys(
+          `crawled:${projectId}:${domainName}:*`,
+        );
         keys.push(`visited:${projectId}:${domainName}`);
+        keys.push(`sitemap_discovered:${projectId}:${domainName}`);
+        keys.push(`crawl_progress:${projectId}:${domainName}:total`);
+        keys.push(`crawl_progress:${projectId}:${domainName}:processed`);
         if (keys.length > 0) {
           await this.redisClient.del(...keys);
         }

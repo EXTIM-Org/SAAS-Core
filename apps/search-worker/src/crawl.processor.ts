@@ -7,7 +7,7 @@
 import { Processor, WorkerHost, InjectQueue } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { Job, Queue } from 'bullmq';
+import { Job, Queue, UnrecoverableError } from 'bullmq';
 import { Client } from 'typesense';
 import * as cheerio from 'cheerio';
 import { firstValueFrom, of } from 'rxjs';
@@ -17,6 +17,10 @@ import * as https from 'https';
 import * as dns from 'dns/promises';
 // @ts-ignore
 import * as randomUseragent from 'random-useragent';
+import * as zlib from 'zlib';
+import { promisify } from 'util';
+
+const gunzip = promisify(zlib.gunzip);
 
 export interface JobData {
   projectId: string;
@@ -60,6 +64,15 @@ export class CrawlProcessor extends WorkerHost {
     );
   }
 
+  private isSitemapUrl(url: string): boolean {
+    const lowerUrl = url.toLowerCase();
+    return (
+      lowerUrl.endsWith('.xml') ||
+      lowerUrl.endsWith('.gz') ||
+      lowerUrl.includes('sitemap')
+    );
+  }
+
   async process(job: Job<JobData, void, string>): Promise<void> {
     if (job.name === 'index-product') {
       await this.processProduct(job);
@@ -70,19 +83,23 @@ export class CrawlProcessor extends WorkerHost {
 
     const { projectId, domain, url, depth = 0 } = job.data;
     const MAX_DEPTH = 3;
+    let jobSuccessful = false;
 
     if (!url || !domain) {
       this.logger.error(`Missing url or domain for crawl job ${job.id}`);
       throw new Error('Missing url or domain');
     }
 
-    // Check if crawl for this project was cancelled
+    // Check if crawl for this project or domain was cancelled
     const isCancelled = await this.redisClient.get(`cancel_crawl:${projectId}`);
-    if (isCancelled) {
-      this.logger.warn(
-        `Job ${job.id} aborted because crawl for project ${projectId} was cancelled.`,
+    const isDomainCancelled = await this.redisClient.get(
+      `cancel_domain:${projectId}:${domain}`,
+    );
+    if (isCancelled || isDomainCancelled) {
+      this.logger.debug(
+        `Job ${job.id} aborted because crawl for project/domain was cancelled.`,
       );
-      return;
+      throw new UnrecoverableError('Crawl Cancelled by User');
     }
 
     const visitedKey = `visited:${projectId}:${domain}`;
@@ -90,7 +107,7 @@ export class CrawlProcessor extends WorkerHost {
     // Mark current URL as visited to prevent duplicate crawling
     await this.redisClient.sadd(visitedKey, url);
 
-    if (depth === 0 && !url.endsWith('.xml')) {
+    if (depth === 0 && !this.isSitemapUrl(url)) {
       await this.tryDiscoverSitemap(url, domain, projectId, this.redisClient);
     }
 
@@ -133,22 +150,30 @@ export class CrawlProcessor extends WorkerHost {
         );
       }
 
-      const isXml = url.endsWith('.xml');
+      const isSitemap = this.isSitemapUrl(url);
+      const isGz = url.toLowerCase().endsWith('.gz');
+
       const response = await firstValueFrom(
         this.httpService.get(url, {
-          timeout: isXml ? 30000 : 10000,
+          timeout: isSitemap ? 60000 : 10000,
           headers: requestHeaders,
           httpsAgent: this.httpsAgent,
           maxRedirects: 5,
-          maxContentLength: 5 * 1024 * 1024, // 5MB limit
-          maxBodyLength: 5 * 1024 * 1024, // 5MB limit
+          maxContentLength: isSitemap ? 50 * 1024 * 1024 : 5 * 1024 * 1024, // 50MB for sitemaps, 5MB for html
+          maxBodyLength: isSitemap ? 50 * 1024 * 1024 : 5 * 1024 * 1024,
+          responseType: isGz ? 'arraybuffer' : 'text',
         }),
       );
-      const html = response.data;
+
+      let html = response.data;
+
+      if (isGz && Buffer.isBuffer(html)) {
+        html = (await gunzip(html)).toString('utf-8');
+      }
 
       const contentType = response.headers['content-type'] || '';
       if (
-        url.endsWith('.xml') ||
+        isSitemap ||
         (typeof contentType === 'string' && contentType.includes('xml'))
       ) {
         const $ = cheerio.load(html, { xmlMode: true });
@@ -180,30 +205,59 @@ export class CrawlProcessor extends WorkerHost {
         const cancelCheckXml = await this.redisClient.get(
           `cancel_crawl:${projectId}`,
         );
-        if (cancelCheckXml) {
-          this.logger.warn(
+        const cancelDomainCheckXml = await this.redisClient.get(
+          `cancel_domain:${projectId}:${domain}`,
+        );
+        if (cancelCheckXml || cancelDomainCheckXml) {
+          this.logger.debug(
             `Aborting sitemap enqueue for project ${projectId} due to cancellation.`,
           );
-          return;
+          throw new UnrecoverableError('Crawl Cancelled by User');
         }
 
         let enqueuedCount = 0;
+        let loopCounter = 0;
         for (const link of links) {
+          loopCounter++;
+          // Check cancellation periodically to prevent fighting if user cancels mid-loop
+          if (loopCounter % 50 === 0) {
+            const cancelCheck = await this.redisClient.get(
+              `cancel_domain:${projectId}:${domain}`,
+            );
+            if (cancelCheck) {
+              this.logger.debug(
+                `Aborting sitemap loop mid-way for project ${projectId} due to cancellation.`,
+              );
+              throw new UnrecoverableError('Crawl Cancelled by User');
+            }
+          }
+
           const added = await this.redisClient.sadd(visitedKey, link);
           if (added === 1) {
-            const isSitemap = link.endsWith('.xml');
+            const isChildSitemap = this.isSitemapUrl(link);
             await this.crawlQueue.add('crawl-job', {
               projectId,
               domain,
               url: link,
-              depth: isSitemap ? 0 : 1, // Sitemaps get depth 0 to parse fully, normal links start at depth 1
+              depth: isChildSitemap ? 0 : 1, // Sitemaps get depth 0 to parse fully, normal links start at depth 1
             });
             enqueuedCount++;
           }
         }
 
+        if (enqueuedCount > 0) {
+          await this.redisClient.incrby(
+            `crawl_progress:${projectId}:${domain}:total`,
+            enqueuedCount,
+          );
+        }
+
         this.logger.log(
           `Successfully processed sitemap: ${url}. Enqueued ${enqueuedCount} new URLs.`,
+        );
+        jobSuccessful = true;
+        await this.redisClient.incr(
+          `crawl_progress:${projectId}:${domain}:processed`,
         );
         return; // Skip standard HTML indexing
       }
@@ -272,37 +326,47 @@ export class CrawlProcessor extends WorkerHost {
       if (!isProduct) {
         const bodyClass = $('body').attr('class') || '';
         const ogType = $('meta[property="og:type"]').attr('content');
-        
+
         if (bodyClass.includes('single-product') || ogType === 'product') {
-          this.logger.log(`Fallback product detection triggered for ${url} (bodyClass: ${bodyClass.includes('single-product')}, ogType: ${ogType})`);
+          this.logger.log(
+            `Fallback product detection triggered for ${url} (bodyClass: ${bodyClass.includes('single-product')}, ogType: ${ogType})`,
+          );
           isProduct = true;
           productData.name = $('h1').first().text().trim() || title;
-          
+
           const metaImage = $('meta[property="og:image"]').attr('content');
           if (metaImage) {
             productData.image_url = metaImage;
           }
-          
+
           let priceText = $('.woocommerce-Price-amount').first().text();
           if (!priceText) {
-             priceText = $('meta[property="product:price:amount"]').attr('content') || '';
+            priceText =
+              $('meta[property="product:price:amount"]').attr('content') || '';
           }
-          
+
           // Convert Persian digits to English
-          const persianToEnglish = (str: string) => str.replace(/[۰-۹]/g, d => '0123456789'[d.charCodeAt(0) - 1776]);
-          const normalizedPrice = persianToEnglish(priceText).replace(/[^\d.]/g, '');
+          const persianToEnglish = (str: string) =>
+            str.replace(/[۰-۹]/g, (d) => '0123456789'[d.charCodeAt(0) - 1776]);
+          const normalizedPrice = persianToEnglish(priceText).replace(
+            /[^\d.]/g,
+            '',
+          );
           const parsedPrice = parseFloat(normalizedPrice);
-          
+
           if (!isNaN(parsedPrice)) {
             productData.price = parsedPrice;
           }
-          
-          productData.currency = $('meta[property="product:price:currency"]').attr('content') || productData.currency;
-          
-          this.logger.log(`Fallback product parsed: ${productData.name} - ${productData.price} ${productData.currency}`);
+
+          productData.currency =
+            $('meta[property="product:price:currency"]').attr('content') ||
+            productData.currency;
+
+          this.logger.log(
+            `Fallback product parsed: ${productData.name} - ${productData.price} ${productData.currency}`,
+          );
         }
       }
-
 
       // 1. Recursive link extraction (BEFORE removing DOM elements)
       if (depth < MAX_DEPTH) {
@@ -337,15 +401,34 @@ export class CrawlProcessor extends WorkerHost {
         const cancelCheckHtml = await this.redisClient.get(
           `cancel_crawl:${projectId}`,
         );
-        if (cancelCheckHtml) {
-          this.logger.warn(
-            `Aborting link enqueue for project ${projectId} due to cancellation.`,
+        const cancelDomainCheckHtml = await this.redisClient.get(
+          `cancel_domain:${projectId}:${domain}`,
+        );
+        if (cancelCheckHtml || cancelDomainCheckHtml) {
+          this.logger.debug(
+            `Aborting HTML enqueue for project ${projectId} due to cancellation.`,
           );
-          return;
+          throw new UnrecoverableError('Crawl Cancelled by User');
         }
 
+        let enqueuedCount = 0;
+        let loopCounter = 0;
         // Enqueue new unvisited links
         for (const link of links) {
+          loopCounter++;
+          // Check cancellation periodically to prevent fighting if user cancels mid-loop
+          if (loopCounter % 50 === 0) {
+            const cancelCheck = await this.redisClient.get(
+              `cancel_domain:${projectId}:${domain}`,
+            );
+            if (cancelCheck) {
+              this.logger.debug(
+                `Aborting HTML loop mid-way for project ${projectId} due to cancellation.`,
+              );
+              throw new UnrecoverableError('Crawl Cancelled by User');
+            }
+          }
+
           const added = await this.redisClient.sadd(visitedKey, link);
           if (added === 1) {
             // 1 means it was newly added (unvisited)
@@ -355,7 +438,15 @@ export class CrawlProcessor extends WorkerHost {
               url: link,
               depth: depth + 1,
             });
+            enqueuedCount++;
           }
+        }
+
+        if (enqueuedCount > 0) {
+          await this.redisClient.incrby(
+            `crawl_progress:${projectId}:${domain}:total`,
+            enqueuedCount,
+          );
         }
       }
 
@@ -419,12 +510,19 @@ export class CrawlProcessor extends WorkerHost {
           .upsert(productDocument);
         this.logger.log(`Successfully indexed product for URL: ${url}`);
       }
+      jobSuccessful = true;
     } catch (error) {
       this.logger.error(
         `Failed to index document/product for URL: ${url}`,
         error instanceof Error ? error.stack : 'Unknown Error',
       );
       throw error; // Let BullMQ handle retry based on the backoff config
+    } finally {
+      if (jobSuccessful) {
+        await this.redisClient.incr(
+          `crawl_progress:${projectId}:${domain}:processed`,
+        );
+      }
     }
   }
 
@@ -473,7 +571,7 @@ export class CrawlProcessor extends WorkerHost {
     projectId: string,
     redis: any,
   ) {
-    const sitemapDiscoveredKey = `sitemap_discovered:${projectId}`;
+    const sitemapDiscoveredKey = `sitemap_discovered:${projectId}:${domain}`;
 
     // Only try discovering once per project crawl to avoid spamming
     const alreadyTried = await redis.setnx(sitemapDiscoveredKey, '1');
