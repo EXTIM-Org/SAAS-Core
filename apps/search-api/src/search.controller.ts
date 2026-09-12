@@ -612,7 +612,27 @@ export class SearchController {
 
       let status = 'PENDING';
       if (total > 0) {
-        status = processed >= total ? 'COMPLETED' : 'CRAWLING';
+        if (processed >= total) {
+          status = 'COMPLETED';
+        } else {
+          // If we are close to completion, verify if the queue is actually idle
+          if (total - processed <= 10) {
+            const counts = await this.crawlQueue.getJobCounts();
+            if (counts.wait === 0 && counts.active === 0 && counts.delayed === 0) {
+              status = 'COMPLETED';
+              processed = total; // Sync for UI
+              // Self-heal the Redis counter
+              await this.redisClient.set(
+                `crawl_progress:${projectId}:${domainName}:processed`,
+                total.toString()
+              );
+            } else {
+              status = 'CRAWLING';
+            }
+          } else {
+            status = 'CRAWLING';
+          }
+        }
       }
 
       return { success: true, total, processed, status };
