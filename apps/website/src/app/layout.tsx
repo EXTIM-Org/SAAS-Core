@@ -35,9 +35,7 @@ export default function RootLayout({
         >
           <div className="ambient-glow top-0 left-0 -translate-x-1/2 -translate-y-1/2" />
           <div className="ambient-glow bottom-0 right-0 translate-x-1/3 translate-y-1/3" />
-          <div className="relative z-10 flex-1 flex flex-col">
-            {children}
-          </div>
+          <div className="relative z-10 flex-1 flex flex-col">{children}</div>
         </ThemeProvider>
       </body>
     </html>

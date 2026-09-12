@@ -42,6 +42,7 @@ export async function impersonateUserAction(userId: string, projectId: string) {
     path: '/',
   });
 
-  const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001';
+  const dashboardUrl =
+    process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001';
   redirect(`${dashboardUrl}/dashboard/projects/${projectId}`);
 }

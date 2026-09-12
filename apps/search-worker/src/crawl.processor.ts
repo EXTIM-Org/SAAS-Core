@@ -256,7 +256,9 @@ export class CrawlProcessor extends WorkerHost {
           `Successfully processed sitemap: ${url}. Enqueued ${enqueuedCount} new URLs.`,
         );
         jobSuccessful = true;
-        this.logger.log(`Sitemap skipped HTML parsing, processed will increment in finally for ${url}`);
+        this.logger.log(
+          `Sitemap skipped HTML parsing, processed will increment in finally for ${url}`,
+        );
         return; // Skip standard HTML indexing
       }
 
@@ -517,9 +519,13 @@ export class CrawlProcessor extends WorkerHost {
 
       if (!(error instanceof UnrecoverableError)) {
         const maxAttempts = job.opts.attempts || 1;
-        this.logger.log(`Job Failed. attemptsMade: ${job.attemptsMade}, maxAttempts: ${maxAttempts}, URL: ${url}`);
+        this.logger.log(
+          `Job Failed. attemptsMade: ${job.attemptsMade}, maxAttempts: ${maxAttempts}, URL: ${url}`,
+        );
         if (job.attemptsMade >= maxAttempts - 1) {
-          this.logger.log(`FINAL ATTEMPT FAILED for ${url}. Incrementing processed!`);
+          this.logger.log(
+            `FINAL ATTEMPT FAILED for ${url}. Incrementing processed!`,
+          );
           await this.redisClient.incr(
             `crawl_progress:${projectId}:${domain}:processed`,
           );
@@ -531,7 +537,9 @@ export class CrawlProcessor extends WorkerHost {
       throw error; // Let BullMQ handle retry based on the backoff config
     } finally {
       if (jobSuccessful) {
-        this.logger.log(`Job successful for URL: ${url}. Incrementing processed.`);
+        this.logger.log(
+          `Job successful for URL: ${url}. Incrementing processed.`,
+        );
         await this.redisClient.incr(
           `crawl_progress:${projectId}:${domain}:processed`,
         );

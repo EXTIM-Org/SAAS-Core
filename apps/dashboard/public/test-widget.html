@@ -1,55 +1,59 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>تست ویجت جستجو</title>
     <style>
-        body {
-            font-family: Tahoma, Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .mock-website {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            max-width: 600px;
-            text-align: center;
-        }
-        h1 {
-            color: #333;
-        }
-        p {
-            color: #666;
-            line-height: 1.6;
-        }
+      body {
+        font-family: Tahoma, Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .mock-website {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        max-width: 600px;
+        text-align: center;
+      }
+      h1 {
+        color: #333;
+      }
+      p {
+        color: #666;
+        line-height: 1.6;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="mock-website">
-        <h1>وبسایت تستی فروشگاه</h1>
-        <p>به این صفحه تستی خوش آمدید. دکمه جستجو (ذره‌بین) در پایین صفحه سمت راست توسط ویجت ما اضافه شده است.</p>
-        <p>روی آن کلیک کنید و نام یکی از محصولاتی که ایندکس کرده بودیم (مثلا: corsair یا h150i) را جستجو کنید تا نتیجه را ببینید.</p>
+      <h1>وبسایت تستی فروشگاه</h1>
+      <p>
+        به این صفحه تستی خوش آمدید. دکمه جستجو (ذره‌بین) در پایین صفحه سمت راست
+        توسط ویجت ما اضافه شده است.
+      </p>
+      <p>
+        روی آن کلیک کنید و نام یکی از محصولاتی که ایندکس کرده بودیم (مثلا:
+        corsair یا h150i) را جستجو کنید تا نتیجه را ببینید.
+      </p>
     </div>
 
     <!-- محل قرارگیری ویجت جستجو -->
-    <div 
-        id="saas-search-widget" 
-        data-project-id="76b6ee77-dd54-473b-96d7-c2b300b2fc9c" 
-        data-api-url="http://localhost:4001"
-        data-mode="ecommerce">
-    </div>
+    <div
+      id="saas-search-widget"
+      data-project-id="76b6ee77-dd54-473b-96d7-c2b300b2fc9c"
+      data-api-url="http://localhost:4001"
+      data-mode="ecommerce"
+    ></div>
 
     <!-- بارگذاری اسکریپت ویجت -->
     <script src="http://localhost:3001/widget.js"></script>
-
-</body>
+  </body>
 </html>

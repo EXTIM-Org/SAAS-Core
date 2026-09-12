@@ -64,7 +64,8 @@ export class AdminController {
 
   @Get('health')
   @Roles('SUPER_ADMIN')
-  healthCheck(@Headers('authorization') auth?: string) { console.log('Health check hit. Auth:', auth?.substring(0, 20));
+  healthCheck(@Headers('authorization') auth?: string) {
+    console.log('Health check hit. Auth:', auth?.substring(0, 20));
     return { status: 'ok', role: 'SUPER_ADMIN' };
   }
 

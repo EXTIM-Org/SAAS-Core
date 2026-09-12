@@ -21,7 +21,11 @@ export class DomainsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(userId: string, createDomainDto: CreateDomainDto, authorization?: string) {
+  async create(
+    userId: string,
+    createDomainDto: CreateDomainDto,
+    authorization?: string,
+  ) {
     const { projectId, name } = createDomainDto;
 
     const member = await this.prisma.projectMember.findUnique({
@@ -54,20 +58,32 @@ export class DomainsService {
       const searchApiUrl =
         this.configService.get<string>('SEARCH_API_URL') ||
         'http://localhost:3002';
-      
-      this.httpService.post(
-        `${searchApiUrl}/search/crawl/${projectId}`,
-        { url: `https://${name}`, domain: name },
-        { 
-          timeout: 5000,
-          headers: authorization ? { authorization } : {}
-        }
-      ).subscribe({
-        next: () => this.logger.log(`Successfully triggered initial crawl for new domain ${name}`),
-        error: (err) => this.logger.error(`Failed to trigger initial crawl for domain ${name}`, err instanceof Error ? err.stack : 'Unknown Error')
-      });
+
+      this.httpService
+        .post(
+          `${searchApiUrl}/search/crawl/${projectId}`,
+          { url: `https://${name}`, domain: name },
+          {
+            timeout: 5000,
+            headers: authorization ? { authorization } : {},
+          },
+        )
+        .subscribe({
+          next: () =>
+            this.logger.log(
+              `Successfully triggered initial crawl for new domain ${name}`,
+            ),
+          error: (err) =>
+            this.logger.error(
+              `Failed to trigger initial crawl for domain ${name}`,
+              err instanceof Error ? err.stack : 'Unknown Error',
+            ),
+        });
     } catch (error) {
-      this.logger.error('Failed to initiate HTTP request for crawl trigger', error);
+      this.logger.error(
+        'Failed to initiate HTTP request for crawl trigger',
+        error,
+      );
     }
 
     return domain;
@@ -115,13 +131,15 @@ export class DomainsService {
       await firstValueFrom(
         this.httpService.delete(
           `${searchApiUrl}/search/projects/${domain.projectId}/domains/${domain.name}`,
-          { 
+          {
             timeout: 5000,
-            headers: authorization ? { authorization } : {}
+            headers: authorization ? { authorization } : {},
           },
         ),
       );
-      this.logger.log(`Successfully notified Search API to delete data for domain ${domain.name}`);
+      this.logger.log(
+        `Successfully notified Search API to delete data for domain ${domain.name}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to notify Search API to delete data for domain ${domain.name}`,

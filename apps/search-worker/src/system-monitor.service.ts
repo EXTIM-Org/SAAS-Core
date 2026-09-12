@@ -44,7 +44,10 @@ export class SystemMonitorService {
       const currentCpuInfo = this.getCpuInfo();
       const idleDifference = currentCpuInfo.idle - this.previousCpuInfo.idle;
       const totalDifference = currentCpuInfo.total - this.previousCpuInfo.total;
-      const sysCpuPercentage = totalDifference === 0 ? 0 : 100 - (100 * idleDifference / totalDifference);
+      const sysCpuPercentage =
+        totalDifference === 0
+          ? 0
+          : 100 - (100 * idleDifference) / totalDifference;
       this.previousCpuInfo = currentCpuInfo;
 
       // System Memory calculation
@@ -62,7 +65,9 @@ export class SystemMonitorService {
         const diskSpace = await checkDiskSpace(diskPath);
         sysStorageTotal = diskSpace.size;
         sysStorageUsed = diskSpace.size - diskSpace.free;
-        sysStoragePercent = diskSpace.size ? (sysStorageUsed / diskSpace.size) * 100 : 0;
+        sysStoragePercent = diskSpace.size
+          ? (sysStorageUsed / diskSpace.size) * 100
+          : 0;
       } catch (err) {
         this.logger.error(`Failed to check disk space for ${diskPath}`, err);
       }
@@ -84,7 +89,7 @@ export class SystemMonitorService {
         // Process metrics
         cpu: stats.cpu, // process CPU percentage (from 0 to 100*vcore)
         memory: stats.memory, // process memory in bytes
-        
+
         // System metrics
         systemCpu: sysCpuPercentage,
         systemMemoryTotal: totalMem,
@@ -96,19 +101,14 @@ export class SystemMonitorService {
         systemSwapTotal: sysSwapTotal,
         systemSwapUsed: sysSwapUsed,
         systemSwapPercent: sysSwapPercent,
-        
+
         timestamp: new Date().toISOString(),
       };
 
       const payloadString = JSON.stringify(payload);
 
       // Set key with 15 second expiration in case worker dies (current stats)
-      await this.redis.set(
-        'worker:system:stats',
-        payloadString,
-        'EX',
-        15,
-      );
+      await this.redis.set('worker:system:stats', payloadString, 'EX', 15);
 
       // Store historical stats in a list (keep last 120 items = 10 minutes)
       const historyKey = 'worker:system:stats:history';

@@ -608,23 +608,26 @@ export class SearchController {
       );
 
       const total = totalStr ? parseInt(totalStr, 10) : 0;
-      const processed = processedStr ? parseInt(processedStr, 10) : 0;
+      let processed = processedStr ? parseInt(processedStr, 10) : 0;
 
       let status = 'PENDING';
       if (total > 0) {
         if (processed >= total) {
           status = 'COMPLETED';
         } else {
-          // If we are close to completion, verify if the queue is actually idle
           if (total - processed <= 10) {
             const counts = await this.crawlQueue.getJobCounts();
-            if (counts.wait === 0 && counts.active === 0 && counts.delayed === 0) {
+            if (
+              counts.waiting === 0 &&
+              counts.active === 0 &&
+              counts.delayed === 0
+            ) {
               status = 'COMPLETED';
               processed = total; // Sync for UI
               // Self-heal the Redis counter
               await this.redisClient.set(
                 `crawl_progress:${projectId}:${domainName}:processed`,
-                total.toString()
+                total.toString(),
               );
             } else {
               status = 'CRAWLING';
@@ -993,7 +996,13 @@ export class SearchController {
         try {
           // Only target statuses that can be safely removed without locking issues.
           // Active jobs will be handled and skipped by the worker itself.
-          const statuses: any[] = ['waiting', 'delayed', 'prioritized', 'completed', 'failed'];
+          const statuses: any[] = [
+            'waiting',
+            'delayed',
+            'prioritized',
+            'completed',
+            'failed',
+          ];
           for (const status of statuses) {
             let start = 0;
             const step = 500;
@@ -1011,7 +1020,7 @@ export class SearchController {
                 (j) =>
                   j.data?.projectId === projectId &&
                   j.data?.domain === domainName &&
-                  j.timestamp <= deletionTime
+                  j.timestamp <= deletionTime,
               );
 
               if (domainJobs.length > 0) {

@@ -76,11 +76,17 @@ export class AuthController {
   @Post('impersonate/:userId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Impersonate a user (SUPER_ADMIN only)' })
-  @ApiResponse({ status: 201, description: 'Returns an impersonation access token.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Returns an impersonation access token.',
+  })
   async impersonate(
     @CurrentUser() user: UserPayload,
     @Param('userId') targetUserId: string,
   ) {
-    return this.authService.impersonateUser(user.userId || (user as any).sub, targetUserId);
+    return this.authService.impersonateUser(
+      user.userId || (user as any).sub,
+      targetUserId,
+    );
   }
 }

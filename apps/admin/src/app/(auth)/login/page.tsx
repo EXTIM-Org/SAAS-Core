@@ -31,7 +31,9 @@ function AdminLoginForm() {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get('error');
   const [error, setError] = useState<string | null>(
-    errorParam === 'unauthorized' ? 'You must be a Super Admin to access this panel.' : null,
+    errorParam === 'unauthorized'
+      ? 'You must be a Super Admin to access this panel.'
+      : null,
   );
   const [mounted, setMounted] = useState(false);
 
@@ -121,7 +123,11 @@ function AdminLoginForm() {
             className="w-full"
             disabled={!mounted || isSubmitting}
           >
-            {!mounted ? 'Loading...' : isSubmitting ? 'Signing in...' : 'Sign in to Admin'}
+            {!mounted
+              ? 'Loading...'
+              : isSubmitting
+                ? 'Signing in...'
+                : 'Sign in to Admin'}
           </Button>
         </CardFooter>
       </form>

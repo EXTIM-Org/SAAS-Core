@@ -42,7 +42,11 @@ export class DomainsController {
     @Body() createDomainDto: CreateDomainDto,
     @Headers('authorization') authorization?: string,
   ) {
-    return this.domainsService.create(user.userId, createDomainDto, authorization);
+    return this.domainsService.create(
+      user.userId,
+      createDomainDto,
+      authorization,
+    );
   }
 
   @Get()

@@ -13,10 +13,13 @@ const client = new Typesense.Client({
 
 async function run() {
   try {
-    const searchResults = await client.collections('products').documents().search({
-      q: '*',
-      per_page: 5,
-    });
+    const searchResults = await client
+      .collections('products')
+      .documents()
+      .search({
+        q: '*',
+        per_page: 5,
+      });
     console.log(JSON.stringify(searchResults, null, 2));
   } catch (error) {
     console.error(error);

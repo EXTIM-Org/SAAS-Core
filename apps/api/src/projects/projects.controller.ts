@@ -37,10 +37,7 @@ export class ProjectsController {
     status: 201,
     description: 'The project has been successfully created.',
   })
-  create(
-    @CurrentUser() user: any,
-    @Body() createProjectDto: CreateProjectDto,
-  ) {
+  create(@CurrentUser() user: any, @Body() createProjectDto: CreateProjectDto) {
     const userId = user?.userId || user?.id || user?.sub;
     return this.projectsService.create(userId, createProjectDto);
   }
@@ -61,10 +58,7 @@ export class ProjectsController {
     status: 404,
     description: 'Project not found or unauthorized.',
   })
-  findOne(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  findOne(@CurrentUser() user: any, @Param('id') id: string) {
     const userId = user?.userId || user?.id || user?.sub;
     return this.projectsService.findOne({ userId, role: user?.role }, id);
   }
@@ -85,7 +79,11 @@ export class ProjectsController {
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
     const userId = user?.userId || user?.id || user?.sub;
-    return this.projectsService.update({ userId, role: user?.role }, id, updateProjectDto);
+    return this.projectsService.update(
+      { userId, role: user?.role },
+      id,
+      updateProjectDto,
+    );
   }
 
   @Delete(':id')
@@ -98,10 +96,7 @@ export class ProjectsController {
     status: 404,
     description: 'Project not found or unauthorized.',
   })
-  remove(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  remove(@CurrentUser() user: any, @Param('id') id: string) {
     const userId = user?.userId || user?.id || user?.sub;
     return this.projectsService.remove({ userId, role: user?.role }, id);
   }

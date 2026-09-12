@@ -53,7 +53,7 @@ function LoginForm() {
         setError(result.error);
         return;
       }
-      
+
       if (redirectUrl && redirectUrl.startsWith('http')) {
         window.location.href = redirectUrl;
       } else {
@@ -72,9 +72,14 @@ function LoginForm() {
           Enter your email and password to log in to your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)} method="POST" action="#" onSubmitCapture={(e) => {
-        if (!mounted) e.preventDefault();
-      }}>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        method="POST"
+        action="#"
+        onSubmitCapture={(e) => {
+          if (!mounted) e.preventDefault();
+        }}
+      >
         <CardContent className="space-y-4">
           {error && (
             <div className="text-sm font-medium text-destructive">{error}</div>
@@ -102,8 +107,16 @@ function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={!mounted || isSubmitting}>
-            {!mounted ? 'Loading...' : isSubmitting ? 'Signing in...' : 'Sign in'}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!mounted || isSubmitting}
+          >
+            {!mounted
+              ? 'Loading...'
+              : isSubmitting
+                ? 'Signing in...'
+                : 'Sign in'}
           </Button>
           <div className="text-sm text-center text-muted-foreground">
             Don&apos;t have an account?{' '}

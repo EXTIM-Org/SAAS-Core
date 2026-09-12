@@ -8,7 +8,13 @@ import { logoutAction } from '@/app/actions/auth';
 import { Button } from '@/components/ui/button';
 import { UserPayload } from '@saas/shared';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 export function DashboardClientLayout({
   children,
@@ -32,7 +38,8 @@ export function DashboardClientLayout({
   ];
 
   if (user?.role === 'SUPER_ADMIN') {
-    const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3002';
+    const adminUrl =
+      process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3002';
     navigation.push({ name: 'Admin Panel', href: adminUrl, icon: ShieldAlert });
   }
 
@@ -42,7 +49,11 @@ export function DashboardClientLayout({
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">
             <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" />}>
+              <SheetTrigger
+                render={
+                  <Button variant="ghost" size="icon" className="md:hidden" />
+                }
+              >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </SheetTrigger>
@@ -51,7 +62,9 @@ export function DashboardClientLayout({
                   <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                     S
                   </div>
-                  <SheetTitle className="font-bold text-lg">SaaS Core</SheetTitle>
+                  <SheetTitle className="font-bold text-lg">
+                    SaaS Core
+                  </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-2 p-4">
                   {navigation.map((item) => {

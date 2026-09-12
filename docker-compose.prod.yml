@@ -8,7 +8,7 @@ services:
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U saas"]
+      test: ['CMD-SHELL', 'pg_isready -U saas']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,7 +20,7 @@ services:
     volumes:
       - redis_prod_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -35,7 +35,7 @@ services:
     volumes:
       - typesense_prod_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8108/health"]
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8108/health']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -55,7 +55,7 @@ services:
       - REDIS_PORT=6379
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
     ports:
-      - "4000:4000"
+      - '4000:4000'
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,7 +74,7 @@ services:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
       - HOSTNAME=0.0.0.0
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - api
     networks:
@@ -89,7 +89,7 @@ services:
       - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
       - TYPESENSE_NODES=[{"host":"typesense","port":"8108","protocol":"http"}]
     ports:
-      - "4001:4001"
+      - '4001:4001'
     depends_on:
       typesense:
         condition: service_healthy
