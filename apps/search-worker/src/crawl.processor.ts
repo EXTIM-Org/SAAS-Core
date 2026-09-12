@@ -516,6 +516,17 @@ export class CrawlProcessor extends WorkerHost {
         `Failed to index document/product for URL: ${url}`,
         error instanceof Error ? error.stack : 'Unknown Error',
       );
+      
+      if (!(error instanceof UnrecoverableError)) {
+        const maxAttempts = job.opts.attempts || 1;
+        if (job.attemptsMade >= maxAttempts - 1) {
+          // Increment progress on final failure so the progress bar doesn't get stuck
+          await this.redisClient.incr(
+            `crawl_progress:${projectId}:${domain}:processed`,
+          );
+        }
+      }
+
       throw error; // Let BullMQ handle retry based on the backoff config
     } finally {
       if (jobSuccessful) {
