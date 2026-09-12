@@ -64,45 +64,44 @@ export function LiveStatsDisplay({
   };
 
   useEffect(() => {
-    let eventSource: EventSource | null = null;
+    let interval: NodeJS.Timeout;
 
-    const connectSSE = () => {
-      // Establish SSE Connection to Core API
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      eventSource = new EventSource(
-        `${apiUrl}/admin/stats/live?token=${token}`,
-      );
+    const fetchStats = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+        const response = await fetch(`${apiUrl}/admin/stats`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
+        });
 
-      eventSource.onopen = () => {
-        setConnectionStatus('connected');
-      };
-
-      eventSource.onmessage = (event) => {
-        try {
-          const newData = JSON.parse(event.data);
+        if (response.ok) {
+          const newData = await response.json();
           setStats((prev: any) => ({
             ...prev,
             ...newData,
           }));
-        } catch (err) {
-          console.error('Error parsing SSE data:', err);
+          setConnectionStatus('connected');
+        } else {
+          setConnectionStatus('disconnected');
         }
-      };
-
-      eventSource.onerror = (error) => {
+      } catch (err) {
+        console.error('Error fetching live stats:', err);
         setConnectionStatus('disconnected');
-        eventSource?.close();
-        // Reconnect after 5 seconds
-        setTimeout(connectSSE, 5000);
-      };
+      }
     };
 
-    connectSSE();
+    // Assume connected initially since we have initialStats from SSR
+    setConnectionStatus('connected');
+    
+    // Poll every 2 seconds
+    interval = setInterval(fetchStats, 2000);
 
     return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
+      clearInterval(interval);
     };
   }, [token]);
 
