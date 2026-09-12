@@ -516,7 +516,7 @@ export class CrawlProcessor extends WorkerHost {
         `Failed to index document/product for URL: ${url}`,
         error instanceof Error ? error.stack : 'Unknown Error',
       );
-      
+
       if (!(error instanceof UnrecoverableError)) {
         const maxAttempts = job.opts.attempts || 1;
         if (job.attemptsMade >= maxAttempts - 1) {
