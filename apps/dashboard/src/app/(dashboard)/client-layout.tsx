@@ -44,7 +44,7 @@ export function DashboardClientLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">
@@ -115,10 +115,12 @@ export function DashboardClientLayout({
         </div>
       </header>
 
-      <div className="container overflow-x-hidden flex-1 items-start md:grid md:grid-cols-[220px_1fr] md:gap-6 lg:grid-cols-[240px_1fr] lg:gap-10 relative">
+      <div className="container flex-1 items-start md:grid md:grid-cols-[220px_1fr] md:gap-6 lg:grid-cols-[240px_1fr] lg:gap-10 relative">
         {/* Ambient Glow Effects */}
-        <div className="ambient-glow top-0 left-0 -translate-x-1/2 -translate-y-1/2" />
-        <div className="ambient-glow bottom-0 right-0 translate-x-1/3 translate-y-1/3" />
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="ambient-glow top-0 left-0 -translate-x-1/2 -translate-y-1/2" />
+          <div className="ambient-glow bottom-0 right-0 translate-x-1/3 translate-y-1/3" />
+        </div>
 
         <aside className="fixed top-14 z-30 -ml-2 hidden h-[calc(100vh-3.5rem)] w-full shrink-0 overflow-y-auto border-r md:sticky md:block">
           <div className="py-6 pr-6 lg:py-8">

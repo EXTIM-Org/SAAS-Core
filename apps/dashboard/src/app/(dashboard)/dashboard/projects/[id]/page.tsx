@@ -20,6 +20,7 @@ import {
   deleteProjectProductAction,
   deleteAllProjectProductsAction,
   getDomainProgressAction,
+  searchProjectProductsAction,
 } from '@/app/actions/search';
 import DashboardLoading from '../../loading';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,8 @@ export default function ProjectDetailsPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [domains, setDomains] = useState<Domain[]>([]);
+  const [domainsPage, setDomainsPage] = useState(1);
+  const DOMAINS_PER_PAGE = 5;
   const [newDomainName, setNewDomainName] = useState('');
   const [error, setError] = useState('');
   const [domainError, setDomainError] = useState('');
@@ -73,9 +76,12 @@ export default function ProjectDetailsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [lastSearchQuery, setLastSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchTotalPages, setSearchTotalPages] = useState(1);
 
   const [indexedDocuments, setIndexedDocuments] = useState<any[]>([]);
   const [docsPage, setDocsPage] = useState(1);
@@ -99,6 +105,14 @@ export default function ProjectDetailsPage() {
   );
   const [isDeletingAllProducts, setIsDeletingAllProducts] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [lastProductSearchQuery, setLastProductSearchQuery] = useState('');
+  const [productSearchResults, setProductSearchResults] = useState<any[]>([]);
+  const [isProductSearching, setIsProductSearching] = useState(false);
+  const [productSearchError, setProductSearchError] = useState('');
+  const [productSearchPage, setProductSearchPage] = useState(1);
+  const [productSearchTotalPages, setProductSearchTotalPages] = useState(1);
   const [analytics, setAnalytics] = useState<{
     totalSearches: number;
     topQueries: { term: string; count: number }[];
@@ -265,20 +279,46 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const executeSearch = useCallback(async (page: number, query: string) => {
+    if (!query.trim()) return;
+    setIsSearching(true);
+    setSearchError('');
+
+    const res = await searchProjectAction(projectId, query, page);
+    if (res.error) {
+      setSearchError(res.error);
+      setSearchResults([]);
+    } else if (res.success) {
+      if (Array.isArray(res.data)) {
+        setSearchResults(res.data);
+        setSearchTotalPages(1);
+      } else {
+        setSearchResults(res.data?.results || []);
+        setSearchTotalPages(res.data?.totalPages || 1);
+      }
+    }
+    setIsSearching(false);
+  }, [projectId]);
+
+  useEffect(() => {
+    if (lastSearchQuery) {
+      executeSearch(searchPage, lastSearchQuery);
+    }
+  }, [searchPage, lastSearchQuery, executeSearch]);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    setSearchError('');
-    setSearchResults([]);
 
-    const res = await searchProjectAction(projectId, searchQuery);
-    if (res.error) {
-      setSearchError(res.error);
-    } else if (res.success) {
-      setSearchResults(res.data || []);
+    if (searchPage !== 1) {
+      setSearchPage(1);
     }
-    setIsSearching(false);
+
+    setLastSearchQuery(searchQuery);
+
+    if (searchQuery === lastSearchQuery && searchPage === 1) {
+      executeSearch(1, searchQuery);
+    }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -294,6 +334,43 @@ export default function ProjectDetailsPage() {
       setSearchResults(searchResults.filter((r) => r.id !== documentId));
     }
     setIsDeletingDoc(null);
+  };
+
+  const executeProductSearch = useCallback(async (page: number, query: string) => {
+    if (!query.trim()) return;
+    setIsProductSearching(true);
+    setProductSearchError('');
+
+    const res = await searchProjectProductsAction(projectId, query, page);
+    if (res.error) {
+      setProductSearchError(res.error);
+      setProductSearchResults([]);
+    } else if (res.success) {
+      setProductSearchResults(res.data?.results || []);
+      setProductSearchTotalPages(res.data?.totalPages || 1);
+    }
+    setIsProductSearching(false);
+  }, [projectId]);
+
+  useEffect(() => {
+    if (lastProductSearchQuery) {
+      executeProductSearch(productSearchPage, lastProductSearchQuery);
+    }
+  }, [productSearchPage, lastProductSearchQuery, executeProductSearch]);
+
+  const handleProductSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productSearchQuery.trim()) return;
+    
+    if (productSearchPage !== 1) {
+      setProductSearchPage(1);
+    }
+    
+    setLastProductSearchQuery(productSearchQuery);
+    
+    if (productSearchQuery === lastProductSearchQuery && productSearchPage === 1) {
+      executeProductSearch(1, productSearchQuery);
+    }
   };
 
   const handleDeleteAllDocuments = async () => {
@@ -394,6 +471,12 @@ export default function ProjectDetailsPage() {
     );
   }
 
+  const domainsTotalPages = Math.ceil(domains.length / DOMAINS_PER_PAGE);
+  const currentDomains = domains.slice(
+    (domainsPage - 1) * DOMAINS_PER_PAGE,
+    domainsPage * DOMAINS_PER_PAGE
+  );
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-4 border-b pb-4">
@@ -484,16 +567,49 @@ export default function ProjectDetailsPage() {
                     No domains added yet.
                   </div>
                 ) : (
-                  <ul className="divide-y">
-                    {domains.map((domain) => (
-                      <DomainListItem
-                        key={domain.id}
-                        domain={domain}
-                        projectId={projectId}
-                        onDelete={() => handleDeleteDomain(domain.id)}
-                      />
-                    ))}
-                  </ul>
+                  <>
+                    <ul className="divide-y max-h-96 overflow-y-auto">
+                      {currentDomains.map((domain) => (
+                        <DomainListItem
+                          key={domain.id}
+                          domain={domain}
+                          projectId={projectId}
+                          onDelete={() => handleDeleteDomain(domain.id)}
+                        />
+                      ))}
+                    </ul>
+                    {domainsTotalPages > 1 && (
+                      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={domainsPage === 1}
+                          onClick={() =>
+                            setDomainsPage((prev) => Math.max(1, prev - 1))
+                          }
+                        >
+                          <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                        </Button>
+                        <PaginationJump
+                          currentPage={domainsPage}
+                          totalPages={domainsTotalPages}
+                          onJump={setDomainsPage}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={domainsPage === domainsTotalPages}
+                          onClick={() =>
+                            setDomainsPage((prev) =>
+                              Math.min(domainsTotalPages, prev + 1),
+                            )
+                          }
+                        >
+                          Next <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </CardContent>
@@ -607,9 +723,11 @@ export default function ProjectDetailsPage() {
                         >
                           <ChevronLeft className="h-4 w-4 mr-1" /> Prev
                         </Button>
-                        <span className="text-sm text-muted-foreground">
-                          Page {docsPage} of {docsTotalPages}
-                        </span>
+                        <PaginationJump
+                          currentPage={docsPage}
+                          totalPages={docsTotalPages}
+                          onJump={setDocsPage}
+                        />
                         <Button
                           variant="outline"
                           size="sm"
@@ -691,6 +809,40 @@ export default function ProjectDetailsPage() {
                   </ul>
                 )}
               </div>
+
+              {/* Pagination for Overview Search Tester */}
+              {searchTotalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 px-6 py-4 border border-border rounded-md bg-muted/20">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={searchPage === 1 || isSearching}
+                    onClick={() => setSearchPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                  </Button>
+                  <PaginationJump
+                    currentPage={searchPage}
+                    totalPages={searchTotalPages}
+                    onJump={setSearchPage}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      searchPage === searchTotalPages ||
+                      isSearching
+                    }
+                    onClick={() =>
+                      setSearchPage((prev) =>
+                        Math.min(searchTotalPages, prev + 1),
+                      )
+                    }
+                  >
+                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -839,13 +991,14 @@ export default function ProjectDetailsPage() {
 
       {/* Products Tab */}
       {activeTab === 'products' && (
-        <Card className="shadow-sm mt-8 border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between bg-muted/50 border-b border-border">
-            <div>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" />
-                Indexed Products
-              </CardTitle>
+        <div className="flex flex-col gap-8">
+          <Card className="shadow-sm border-border bg-card">
+            <CardHeader className="flex flex-row items-center justify-between bg-muted/50 border-b border-border">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Package className="w-5 h-5 text-primary" />
+                  Indexed Products
+                </CardTitle>
               <CardDescription>
                 Products automatically detected and indexed by the crawler.
                 Total: {productsTotal}
@@ -992,42 +1145,204 @@ export default function ProjectDetailsPage() {
                 {/* Pagination */}
                 {productsTotalPages > 1 && (
                   <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
-                    <span className="text-sm text-muted-foreground">
-                      Page {productsPage} of {productsTotalPages}
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={productsPage === 1 || isLoadingProducts}
-                        onClick={() =>
-                          setProductsPage((prev) => Math.max(1, prev - 1))
-                        }
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={
-                          productsPage === productsTotalPages ||
-                          isLoadingProducts
-                        }
-                        onClick={() =>
-                          setProductsPage((prev) =>
-                            Math.min(productsTotalPages, prev + 1),
-                          )
-                        }
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={productsPage === 1 || isLoadingProducts}
+                      onClick={() =>
+                        setProductsPage((prev) => Math.max(1, prev - 1))
+                      }
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                    </Button>
+                    <PaginationJump
+                      currentPage={productsPage}
+                      totalPages={productsTotalPages}
+                      onJump={setProductsPage}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={
+                        productsPage === productsTotalPages ||
+                        isLoadingProducts
+                      }
+                      onClick={() =>
+                        setProductsPage((prev) =>
+                          Math.min(productsTotalPages, prev + 1),
+                        )
+                      }
+                    >
+                      Next <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
                   </div>
                 )}
               </div>
             )}
           </CardContent>
         </Card>
+<Card>
+            <CardHeader>
+              <CardTitle>Product Search Tester</CardTitle>
+              <CardDescription>
+                Test your project's product search functionality directly.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+              <form onSubmit={handleProductSearch} className="flex gap-4">
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={productSearchQuery}
+                  onChange={(e) => setProductSearchQuery(e.target.value)}
+                  disabled={isProductSearching}
+                  className="max-w-sm"
+                />
+                <Button
+                  type="submit"
+                  disabled={isProductSearching || !productSearchQuery.trim()}
+                >
+                  {isProductSearching ? 'Searching...' : 'Search'}
+                </Button>
+              </form>
+              {productSearchError && (
+                <p className="text-sm font-medium text-destructive">
+                  {productSearchError}
+                </p>
+              )}
+
+              <div className="rounded-md border bg-muted/10 p-6">
+                {productSearchResults.length === 0 ? (
+                  <div className="text-center text-sm text-muted-foreground">
+                    No search results.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {productSearchResults.map((product) => (
+                      <div
+                        key={product.id}
+                        className="group flex flex-col bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 overflow-hidden"
+                      >
+                        <div className="relative aspect-square bg-card border-b border-border overflow-hidden flex items-center justify-center p-6">
+                          {product.image_url ? (
+                            <img
+                              src={product.image_url}
+                              alt={product.title}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <Package className="w-16 h-16 text-muted-foreground/30" />
+                          )}
+                          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-sm ${product.in_stock === false ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}`}
+                            >
+                              {product.in_stock === false ? 'Out of Stock' : 'In Stock'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-5 flex flex-col flex-1">
+                          {product.brand && (
+                            <span className="text-xs font-semibold text-primary mb-1.5 uppercase tracking-wide">
+                              {product.brand}
+                            </span>
+                          )}
+                          <h4 className="font-medium text-foreground text-sm line-clamp-2 leading-snug mb-3 flex-1" title={product.title}>
+                            {product.title}
+                          </h4>
+                          <div className="mt-auto pt-3 border-t border-border flex items-end justify-between gap-2">
+                            <div>
+                              <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Price</div>
+                              <div className="text-sm font-bold text-foreground">
+                                {product.price ? (
+                                  <>{product.price.toLocaleString()} <span className="text-xs font-normal text-muted-foreground ml-0.5">{product.currency || 'Toman'}</span></>
+                                ) : (
+                                  <span className="text-muted-foreground font-normal">Contact for price</span>
+                                )}
+                              </div>
+                            </div>
+                            <a href={product.url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" title="View original product">
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Pagination for Search Tester */}
+              {productSearchTotalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 px-6 py-4 border border-border rounded-md bg-muted/20">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={productSearchPage === 1 || isProductSearching}
+                    onClick={() => setProductSearchPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                  </Button>
+                  <PaginationJump
+                    currentPage={productSearchPage}
+                    totalPages={productSearchTotalPages}
+                    onJump={setProductSearchPage}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      productSearchPage === productSearchTotalPages ||
+                      isProductSearching
+                    }
+                    onClick={() =>
+                      setProductSearchPage((prev) =>
+                        Math.min(productSearchTotalPages, prev + 1),
+                      )
+                    }
+                  >
+                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Ecommerce Integration Guide</CardTitle>
+              <CardDescription>
+                Copy and paste this snippet into your website's HTML to install
+                the ecommerce product search widget.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="relative group">
+                <div className="bg-muted p-4 pr-16 rounded-md font-mono text-sm overflow-x-auto whitespace-pre">
+                  {`<div id="saas-search-widget" data-project-id="${projectId}" data-api-url="http://localhost:4001" data-mode="ecommerce"></div>\n<script src="http://localhost:3001/widget.js" defer></script>`}
+                </div>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary/80"
+                  onClick={handleCopySnippet}
+                >
+                  {isCopied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-4">
+                Place the snippet just before the closing{' '}
+                <code>&lt;/body&gt;</code> tag of your website.
+              </p>
+            </CardContent>
+          </Card>
+
+                  </div>
       )}
     </div>
   );
@@ -1049,26 +1364,36 @@ function DomainListItem({
   } | null>(null);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let timeout: NodeJS.Timeout;
+    let isMounted = true;
 
-    const fetchProgress = async () => {
+    const pollProgress = async () => {
+      if (!isMounted) return;
+      
       const res = await getDomainProgressAction(projectId, domain.name);
-      if (res.success) {
+      if (res.success && isMounted) {
         setProgress({
           total: res.total,
           processed: res.processed,
           status: res.status,
         });
+
+        // Continue polling only if not completed or failed
+        if (res.status !== 'COMPLETED' && res.status !== 'FAILED') {
+          timeout = setTimeout(pollProgress, 4000);
+        }
+      } else if (isMounted) {
+        // Retry on network errors
+        timeout = setTimeout(pollProgress, 4000);
       }
     };
 
-    fetchProgress();
+    pollProgress();
 
-    interval = setInterval(() => {
-      fetchProgress();
-    }, 4000);
-
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+    };
   }, [projectId, domain.name]);
 
   const percentage =
@@ -1117,5 +1442,47 @@ function DomainListItem({
         </Button>
       </div>
     </li>
+  );
+}
+
+function PaginationJump({
+  currentPage,
+  totalPages,
+  onJump,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onJump: (page: number) => void;
+}) {
+  const [inputValue, setInputValue] = useState(currentPage.toString());
+
+  useEffect(() => {
+    setInputValue(currentPage.toString());
+  }, [currentPage]);
+
+  const handleGo = () => {
+    const val = parseInt(inputValue);
+    if (!isNaN(val)) {
+      onJump(Math.min(Math.max(1, val), totalPages));
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <span>Page</span>
+      <Input
+        type="number"
+        min={1}
+        max={totalPages}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleGo()}
+        className="w-16 h-8 text-center px-1"
+      />
+      <span>of {totalPages}</span>
+      <Button variant="secondary" size="sm" onClick={handleGo} className="h-8">
+        Go
+      </Button>
+    </div>
   );
 }

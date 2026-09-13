@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ export default function Home() {
             </span>
           </div>
           <nav className="flex items-center gap-4">
+            <ThemeToggle />
             <Link href="/login">
               <Button variant="ghost">Login</Button>
             </Link>

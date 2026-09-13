@@ -10,17 +10,55 @@ const API_URL =
   process.env.API_URL ||
   'http://localhost:4000';
 
-export async function searchProjectAction(projectId: string, query: string) {
+export async function searchProjectAction(
+  projectId: string,
+  query: string,
+  page: number = 1,
+) {
   if (!query.trim()) {
-    return { data: [] };
+    return { data: { results: [], total: 0, totalPages: 1 } };
   }
 
   const url = new URL(`${SEARCH_API_URL}/search/${projectId}`);
   url.searchParams.append('q', query);
+  url.searchParams.append('page', page.toString());
 
   try {
     const response = await fetchWithAuth(url.toString(), {
       method: 'GET',
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { error: errorData.message || 'Failed to perform search' };
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    const err = error as Error;
+    return { error: err.message || 'An error occurred during search' };
+  }
+}
+
+export async function searchProjectProductsAction(
+  projectId: string,
+  query: string,
+  page: number = 1,
+) {
+  if (!query.trim()) {
+    return { data: { results: [], facets: [], total: 0, totalPages: 1 } };
+  }
+
+  const url = new URL(`${SEARCH_API_URL}/search/${projectId}/products/search`);
+  url.searchParams.append('q', query);
+  url.searchParams.append('page', page.toString());
+
+  try {
+    const response = await fetchWithAuth(url.toString(), {
+      method: 'GET',
+      cache: 'no-store',
     });
 
     if (!response.ok) {

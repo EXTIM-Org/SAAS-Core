@@ -90,25 +90,24 @@ export class CrawlProcessor extends WorkerHost {
       throw new Error('Missing url or domain');
     }
 
-    // Check if crawl for this project or domain was cancelled
-    const isCancelled = await this.redisClient.get(`cancel_crawl:${projectId}`);
+    // Check if crawl for this domain was cancelled globally
     const isDomainCancelled = await this.redisClient.get(
-      `cancel_domain:${projectId}:${domain}`,
+      `cancel_domain:global:${domain}`,
     );
-    if (isCancelled || isDomainCancelled) {
+    if (isDomainCancelled) {
       this.logger.debug(
-        `Job ${job.id} aborted because crawl for project/domain was cancelled.`,
+        `Job ${job.id} aborted because crawl for domain was cancelled.`,
       );
       throw new UnrecoverableError('Crawl Cancelled by User');
     }
 
-    const visitedKey = `visited:${projectId}:${domain}`;
+    const visitedKey = `visited:global:${domain}`;
 
     // Mark current URL as visited to prevent duplicate crawling
     await this.redisClient.sadd(visitedKey, url);
 
     if (depth === 0 && !this.isSitemapUrl(url)) {
-      await this.tryDiscoverSitemap(url, domain, projectId, this.redisClient);
+      await this.tryDiscoverSitemap(url, domain, this.redisClient);
     }
 
     let title: string;
@@ -202,15 +201,12 @@ export class CrawlProcessor extends WorkerHost {
         });
 
         // Check cancellation before pushing XML links
-        const cancelCheckXml = await this.redisClient.get(
-          `cancel_crawl:${projectId}`,
-        );
         const cancelDomainCheckXml = await this.redisClient.get(
-          `cancel_domain:${projectId}:${domain}`,
+          `cancel_domain:global:${domain}`,
         );
-        if (cancelCheckXml || cancelDomainCheckXml) {
+        if (cancelDomainCheckXml) {
           this.logger.debug(
-            `Aborting sitemap enqueue for project ${projectId} due to cancellation.`,
+            `Aborting sitemap enqueue for domain ${domain} due to cancellation.`,
           );
           throw new UnrecoverableError('Crawl Cancelled by User');
         }
@@ -222,11 +218,11 @@ export class CrawlProcessor extends WorkerHost {
           // Check cancellation periodically to prevent fighting if user cancels mid-loop
           if (loopCounter % 50 === 0) {
             const cancelCheck = await this.redisClient.get(
-              `cancel_domain:${projectId}:${domain}`,
+              `cancel_domain:global:${domain}`,
             );
             if (cancelCheck) {
               this.logger.debug(
-                `Aborting sitemap loop mid-way for project ${projectId} due to cancellation.`,
+                `Aborting sitemap loop mid-way for domain ${domain} due to cancellation.`,
               );
               throw new UnrecoverableError('Crawl Cancelled by User');
             }
@@ -247,7 +243,7 @@ export class CrawlProcessor extends WorkerHost {
 
         if (enqueuedCount > 0) {
           await this.redisClient.incrby(
-            `crawl_progress:${projectId}:${domain}:total`,
+            `crawl_progress:global:${domain}:total`,
             enqueuedCount,
           );
         }
@@ -398,15 +394,12 @@ export class CrawlProcessor extends WorkerHost {
         });
 
         // Check cancellation before pushing HTML links
-        const cancelCheckHtml = await this.redisClient.get(
-          `cancel_crawl:${projectId}`,
-        );
         const cancelDomainCheckHtml = await this.redisClient.get(
-          `cancel_domain:${projectId}:${domain}`,
+          `cancel_domain:global:${domain}`,
         );
-        if (cancelCheckHtml || cancelDomainCheckHtml) {
+        if (cancelDomainCheckHtml) {
           this.logger.debug(
-            `Aborting HTML enqueue for project ${projectId} due to cancellation.`,
+            `Aborting HTML enqueue for domain ${domain} due to cancellation.`,
           );
           throw new UnrecoverableError('Crawl Cancelled by User');
         }
@@ -419,11 +412,11 @@ export class CrawlProcessor extends WorkerHost {
           // Check cancellation periodically to prevent fighting if user cancels mid-loop
           if (loopCounter % 50 === 0) {
             const cancelCheck = await this.redisClient.get(
-              `cancel_domain:${projectId}:${domain}`,
+              `cancel_domain:global:${domain}`,
             );
             if (cancelCheck) {
               this.logger.debug(
-                `Aborting HTML loop mid-way for project ${projectId} due to cancellation.`,
+                `Aborting HTML loop mid-way for domain ${domain} due to cancellation.`,
               );
               throw new UnrecoverableError('Crawl Cancelled by User');
             }
@@ -444,7 +437,7 @@ export class CrawlProcessor extends WorkerHost {
 
         if (enqueuedCount > 0) {
           await this.redisClient.incrby(
-            `crawl_progress:${projectId}:${domain}:total`,
+            `crawl_progress:global:${domain}:total`,
             enqueuedCount,
           );
         }
@@ -473,7 +466,6 @@ export class CrawlProcessor extends WorkerHost {
 
     const document = {
       id: documentId,
-      projectId,
       domain,
       url,
       title,
@@ -492,7 +484,6 @@ export class CrawlProcessor extends WorkerHost {
       if (isProduct && productData.name) {
         const productDocument = {
           id: documentId,
-          projectId,
           domain,
           title: productData.name,
           description: productData.description || content.substring(0, 200),
@@ -527,7 +518,7 @@ export class CrawlProcessor extends WorkerHost {
             `FINAL ATTEMPT FAILED for ${url}. Incrementing processed!`,
           );
           await this.redisClient.incr(
-            `crawl_progress:${projectId}:${domain}:processed`,
+            `crawl_progress:global:${domain}:processed`,
           );
         } else {
           this.logger.log(`Not final attempt for ${url}. Will retry.`);
@@ -541,7 +532,7 @@ export class CrawlProcessor extends WorkerHost {
           `Job successful for URL: ${url}. Incrementing processed.`,
         );
         await this.redisClient.incr(
-          `crawl_progress:${projectId}:${domain}:processed`,
+          `crawl_progress:global:${domain}:processed`,
         );
       }
     }
@@ -563,7 +554,7 @@ export class CrawlProcessor extends WorkerHost {
 
     const document = {
       id: productId,
-      projectId,
+      projectId, // Keep projectId here if it's a manual product upload directly from the dashboard
       title: name,
       description,
       price,
@@ -589,10 +580,9 @@ export class CrawlProcessor extends WorkerHost {
   private async tryDiscoverSitemap(
     baseUrl: string,
     domain: string,
-    projectId: string,
     redis: any,
   ) {
-    const sitemapDiscoveredKey = `sitemap_discovered:${projectId}:${domain}`;
+    const sitemapDiscoveredKey = `sitemap_discovered:global:${domain}`;
 
     // Only try discovering once per project crawl to avoid spamming
     const alreadyTried = await redis.setnx(sitemapDiscoveredKey, '1');
@@ -640,7 +630,6 @@ export class CrawlProcessor extends WorkerHost {
 
       // Enqueue the sitemap without doing a HEAD request (which gets blocked by many firewalls)
       await this.crawlQueue.add('crawl-job', {
-        projectId,
         domain,
         url: sitemapUrl,
         depth: 0,

@@ -30,14 +30,26 @@ export class CrawlSchedulerService {
 
       const domains = await this.prisma.domain.findMany({
         include: {
-          project: true,
+          projectDomains: {
+            include: {
+              project: true,
+            },
+          },
         },
       });
 
       const now = new Date();
       const domainsToCrawl = domains.filter((domain) => {
-        const interval =
-          domain.project.autoCrawlIntervalDays ?? defaultInterval;
+        // Get minimum autoCrawlIntervalDays among all projects using this domain
+        const intervals = domain.projectDomains
+          .map((pd) => pd.project.autoCrawlIntervalDays)
+          .filter((interval) => interval !== null) as number[];
+        
+        let interval = defaultInterval;
+        if (intervals.length > 0) {
+          interval = Math.min(...intervals);
+        }
+
         if (interval === 0) return false;
 
         if (!domain.lastCrawledAt) return true;
@@ -63,24 +75,23 @@ export class CrawlSchedulerService {
       });
 
       for (const domain of domainsToCrawl) {
-        const projectId = domain.projectId;
         const url = `https://${domain.name}`;
 
         this.logger.log(
-          `Triggering re-crawl for domain: ${domain.name} (Project: ${projectId})`,
+          `Triggering re-crawl for domain: ${domain.name}`,
         );
 
         // 1. Clear Redis caches
-        const keys = await redis.keys(`crawled:${projectId}:*`);
-        keys.push(`visited:${projectId}:${domain.name}`);
+        const keys = await redis.keys(`crawled:global:*`); // Clear global cache for domain
+        keys.push(`visited:global:${domain.name}`);
         if (keys.length > 0) {
           await redis.del(...keys);
         }
 
-        // 2. Add to crawl queue
+        // 2. Add to crawl queue (projectId is now optional, we don't pass it here)
         await this.crawlQueue.add(
           'crawl',
-          { url, domain: domain.name, projectId },
+          { url, domain: domain.name },
           { removeOnComplete: true, removeOnFail: 1000 },
         );
 

@@ -33,23 +33,34 @@ model Project {
   updatedAt             DateTime @updatedAt
   autoCrawlIntervalDays Int?
   members    ProjectMember[]
-  domains    Domain[]
   categories Category[]
   products   Product[]
   carts      Cart[]
   Order      Order[]
+  projectDomains ProjectDomain[]
 }
 
 model Domain {
   id                    String   @id @default(uuid())
   name                  String   @unique
-  projectId             String
   lastCrawledAt         DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  products Product[]
+  projectDomains        ProjectDomain[]
+  products              Product[]
+}
+
+model ProjectDomain {
+  id        String   @id @default(uuid())
+  projectId String
+  domainId  String
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  domain    Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, domainId])
 }
 
 model Category {
@@ -69,13 +80,13 @@ model Product {
   description    String?
   price          Float
   inventoryCount Int
-  projectId      String
+  projectId      String?
   categoryId     String?
   domainId       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project?    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   category  Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   domain    Domain?     @relation(fields: [domainId], references: [id], onDelete: Cascade)
   cartItems CartItem[]

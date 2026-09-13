@@ -234,7 +234,7 @@ export class AdminController {
           },
         },
         _count: {
-          select: { domains: true, products: true },
+          select: { projectDomains: true, products: true },
         },
       },
       orderBy: { createdAt: 'desc' },

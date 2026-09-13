@@ -38,22 +38,34 @@ export class DomainsService {
       );
     }
 
-    const existingDomain = await this.prisma.domain.findUnique({
+    let domain = await this.prisma.domain.findUnique({
       where: { name },
     });
 
-    if (existingDomain) {
-      throw new BadRequestException('Domain name is already taken');
+    let isNewDomain = false;
+    if (!domain) {
+      domain = await this.prisma.domain.create({
+        data: { name },
+      });
+      isNewDomain = true;
     }
 
-    const domain = await this.prisma.domain.create({
+    const existingLink = await this.prisma.projectDomain.findUnique({
+      where: { projectId_domainId: { projectId, domainId: domain.id } },
+    });
+
+    if (existingLink) {
+      throw new BadRequestException('Domain is already added to this project');
+    }
+
+    await this.prisma.projectDomain.create({
       data: {
-        name,
         projectId,
+        domainId: domain.id,
       },
     });
 
-    // Fire and forget initial crawl trigger
+    // Fire and forget initial crawl trigger (maybe do it even if not new to catch up, but safely let's do it always)
     try {
       const searchApiUrl =
         this.configService.get<string>('SEARCH_API_URL') ||
@@ -71,11 +83,11 @@ export class DomainsService {
         .subscribe({
           next: () =>
             this.logger.log(
-              `Successfully triggered initial crawl for new domain ${name}`,
+              `Successfully triggered crawl for domain ${name}`,
             ),
           error: (err) =>
             this.logger.error(
-              `Failed to trigger initial crawl for domain ${name}`,
+              `Failed to trigger crawl for domain ${name}`,
               err instanceof Error ? err.stack : 'Unknown Error',
             ),
         });
@@ -98,23 +110,29 @@ export class DomainsService {
       throw new UnauthorizedException('You do not have access to this project');
     }
 
-    return this.prisma.domain.findMany({
+    const projectDomains = await this.prisma.projectDomain.findMany({
       where: { projectId },
+      include: { domain: true },
     });
+    
+    return projectDomains.map(pd => pd.domain);
   }
 
   async remove(userId: string, id: string, authorization?: string) {
-    const domain = await this.prisma.domain.findUnique({
-      where: { id },
-      include: { project: true },
+    const link = await this.prisma.projectDomain.findFirst({
+      where: {
+        domainId: id,
+        project: { members: { some: { userId } } },
+      },
+      include: { domain: true },
     });
 
-    if (!domain) {
-      throw new NotFoundException(`Domain with ID ${id} not found`);
+    if (!link) {
+      throw new NotFoundException(`Domain link not found or unauthorized`);
     }
 
     const member = await this.prisma.projectMember.findUnique({
-      where: { userId_projectId: { userId, projectId: domain.projectId } },
+      where: { userId_projectId: { userId, projectId: link.projectId } },
     });
 
     if (!member || member.role === 'VIEWER') {
@@ -123,34 +141,46 @@ export class DomainsService {
       );
     }
 
-    // 1. Notify Search Service to delete domain data (Typesense, BullMQ, Redis)
-    try {
-      const searchApiUrl =
-        this.configService.get<string>('SEARCH_API_URL') ||
-        'http://localhost:3002';
-      await firstValueFrom(
-        this.httpService.delete(
-          `${searchApiUrl}/search/projects/${domain.projectId}/domains/${domain.name}`,
-          {
-            timeout: 5000,
-            headers: authorization ? { authorization } : {},
-          },
-        ),
-      );
-      this.logger.log(
-        `Successfully notified Search API to delete data for domain ${domain.name}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to notify Search API to delete data for domain ${domain.name}`,
-        error instanceof Error ? error.stack : 'Unknown Error',
-      );
-      // We log the error but still proceed to delete from DB to prevent a stuck state
+    // 1. Delete the user's subscription to this domain
+    await this.prisma.projectDomain.delete({
+      where: { id: link.id },
+    });
+
+    // 2. Check if the domain is still used by other projects
+    const count = await this.prisma.projectDomain.count({
+      where: { domainId: id },
+    });
+
+    if (count === 0) {
+      this.logger.log(`Domain ${link.domain.name} has no more subscribers. Deleting globally.`);
+      // 3. Notify Search Service to delete global domain data (Typesense, BullMQ, Redis)
+      try {
+        const searchApiUrl =
+          this.configService.get<string>('SEARCH_API_URL') ||
+          'http://localhost:3002';
+        await firstValueFrom(
+          this.httpService.delete(
+            `${searchApiUrl}/search/domains/${link.domain.name}`,
+            {
+              timeout: 5000,
+              headers: authorization ? { authorization } : {},
+            },
+          ),
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to notify Search API to delete data for domain ${link.domain.name}`,
+          error instanceof Error ? error.stack : 'Unknown Error',
+        );
+      }
+
+      // 4. Delete Domain from DB
+      return this.prisma.domain.delete({
+        where: { id },
+      });
     }
 
-    // 2. Delete Domain from DB (which automatically cascades to Products due to onDelete: Cascade)
-    return this.prisma.domain.delete({
-      where: { id },
-    });
+    this.logger.log(`Domain ${link.domain.name} is still used by ${count} other project(s). Kept globally.`);
+    return link.domain;
   }
 }

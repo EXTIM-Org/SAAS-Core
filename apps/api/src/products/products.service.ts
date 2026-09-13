@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -80,10 +81,10 @@ export class ProductsService {
     }
 
     if (productData.domainId) {
-      const domain = await this.prisma.domain.findFirst({
-        where: { id: productData.domainId, projectId },
+      const link = await this.prisma.projectDomain.findUnique({
+        where: { projectId_domainId: { projectId, domainId: productData.domainId } },
       });
-      if (!domain) {
+      if (!link) {
         throw new NotFoundException('Domain not found in this project');
       }
     }
@@ -177,10 +178,13 @@ export class ProductsService {
 
     if (updateData.domainId) {
       const targetProjectId = projectId || product.projectId;
-      const domain = await this.prisma.domain.findFirst({
-        where: { id: updateData.domainId, projectId: targetProjectId },
+      if (!targetProjectId) {
+        throw new BadRequestException('Cannot set domainId on a product without a projectId');
+      }
+      const link = await this.prisma.projectDomain.findUnique({
+        where: { projectId_domainId: { projectId: targetProjectId, domainId: updateData.domainId } },
       });
-      if (!domain) {
+      if (!link) {
         throw new NotFoundException('Domain not found in this project');
       }
     }
