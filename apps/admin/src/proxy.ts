@@ -36,9 +36,9 @@ export default function proxy(request: NextRequest) {
     let payload = token ? decodeJwt(token) : null;
 
     // If current token is missing or not admin, but we have admin_token, restore it
-    if ((!payload || payload.role !== 'SUPER_ADMIN') && adminToken) {
+    if ((!payload || !['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(payload.role)) && adminToken) {
       const adminPayload = decodeJwt(adminToken);
-      if (adminPayload && adminPayload.role === 'SUPER_ADMIN') {
+      if (adminPayload && ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(adminPayload.role)) {
         const response = NextResponse.redirect(request.url);
         response.cookies.set('token', adminToken);
         response.cookies.delete('admin_token');
@@ -46,7 +46,7 @@ export default function proxy(request: NextRequest) {
       }
     }
 
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
+    if (!payload || !['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(payload.role)) {
       // If they are logged in but not an admin, redirect them to the main app dashboard
       // or just redirect to login with an error. We'll clear the token and redirect to login.
       const response = NextResponse.redirect(
@@ -62,7 +62,7 @@ export default function proxy(request: NextRequest) {
   if (isPublicRoute) {
     if (token) {
       const payload = decodeJwt(token);
-      if (payload && payload.role === 'SUPER_ADMIN') {
+      if (payload && ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(payload.role)) {
         return NextResponse.redirect(new URL('/', request.url));
       }
     }

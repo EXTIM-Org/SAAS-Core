@@ -127,22 +127,6 @@ export default async function AdminDashboardPage() {
                   global application settings, or monitor the health of the
                   search cluster and crawler queues.
                 </p>
-                <form
-                  action={async () => {
-                    'use server';
-                    const cookieStore = await cookies();
-                    cookieStore.delete('token');
-                    redirect('/login');
-                  }}
-                >
-                  <Button
-                    variant="outline"
-                    type="submit"
-                    className="hover-glow"
-                  >
-                    Sign Out
-                  </Button>
-                </form>
               </CardContent>
             </Card>
           </div>

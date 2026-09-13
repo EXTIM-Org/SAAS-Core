@@ -12,7 +12,7 @@ import {
 export default async function AdminPage() {
   const user = await getCurrentUserAction();
 
-  if (!user || user.role !== 'SUPER_ADMIN') {
+  if (!user || !['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(user.role)) {
     redirect('/dashboard');
   }
 

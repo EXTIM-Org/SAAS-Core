@@ -23,6 +23,8 @@ model User {
 
 enum GlobalRole {
   SUPER_ADMIN
+  ADMIN
+  SUPPORT
   USER
 }
 

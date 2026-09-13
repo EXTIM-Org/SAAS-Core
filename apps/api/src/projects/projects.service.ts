@@ -39,7 +39,7 @@ export class ProjectsService {
   }
 
   async findOne(user: { userId: string; role?: string }, id: string) {
-    const isSuperAdmin = user.role === 'SUPER_ADMIN';
+    const isSuperAdmin = user.role ? ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(user.role) : false;
 
     const project = await this.prisma.project.findFirst({
       where: {

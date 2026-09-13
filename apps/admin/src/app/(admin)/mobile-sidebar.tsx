@@ -10,8 +10,11 @@ import {
   Globe,
   LayoutDashboard,
   Menu,
+  LogOut,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { logoutAction } from '@/app/actions/auth';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -28,9 +31,15 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-export function MobileSidebar() {
+export function MobileSidebar({ userEmail }: { userEmail?: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logoutAction();
+    router.push('/login');
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -70,11 +79,24 @@ export function MobileSidebar() {
             );
           })}
         </nav>
-        <div className="mt-auto p-4 border-t border-border/50 flex items-center justify-between">
-          <span className="text-sm text-muted-foreground font-medium">
-            Theme
-          </span>
-          <ThemeToggle />
+        <div className="mt-auto flex flex-col border-t border-border/50">
+          {userEmail && (
+            <div className="px-6 py-3 text-xs text-muted-foreground truncate border-b border-border/50" title={userEmail}>
+              Logged in as:<br/>
+              <span className="font-medium text-foreground">{userEmail}</span>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-6 py-4 text-sm font-medium text-muted-foreground hover:bg-muted/50 hover:text-red-500 transition-all duration-300 w-full text-left"
+          >
+            <LogOut className="h-4 w-4" />
+            Log out
+          </button>
+          <div className="p-4 border-t border-border/50 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground font-medium">Theme</span>
+            <ThemeToggle />
+          </div>
         </div>
       </SheetContent>
     </Sheet>

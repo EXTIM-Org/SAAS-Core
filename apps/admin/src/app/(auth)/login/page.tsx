@@ -81,7 +81,14 @@ function AdminLoginForm() {
           Enter your super admin credentials to access the system
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        method="POST"
+        action="#"
+        onSubmitCapture={(e) => {
+          if (!mounted) e.preventDefault();
+        }}
+      >
         <CardContent className="space-y-4">
           {error && (
             <div className="rounded-md bg-destructive/15 p-3 text-sm font-medium text-destructive">

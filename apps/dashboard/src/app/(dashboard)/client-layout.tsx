@@ -37,7 +37,7 @@ export function DashboardClientLayout({
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  if (user?.role === 'SUPER_ADMIN') {
+  if (user?.role && ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(user.role)) {
     const adminUrl =
       process.env.NEXT_PUBLIC_ADMIN_URL || 'http://localhost:3002';
     navigation.push({ name: 'Admin Panel', href: adminUrl, icon: ShieldAlert });

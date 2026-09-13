@@ -15,6 +15,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { GlobalRole } from '@saas/database';
 import { HttpService } from '@nestjs/axios';
@@ -63,14 +64,14 @@ export class AdminController {
   }
 
   @Get('health')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'SUPPORT')
   healthCheck(@Headers('authorization') auth?: string) {
     console.log('Health check hit. Auth:', auth?.substring(0, 20));
     return { status: 'ok', role: 'SUPER_ADMIN' };
   }
 
   @Get('stats')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'SUPPORT')
   async getStats(@Headers('authorization') authorization?: string) {
     const [totalUsers, totalProjects, totalOrders, revenueResult] =
       await Promise.all([
@@ -120,7 +121,7 @@ export class AdminController {
   }
 
   @Sse('stats/live')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'SUPPORT')
   statsLive(
     @Headers('authorization') authorization?: string,
     @Query('token') token?: string,
@@ -146,7 +147,7 @@ export class AdminController {
   }
 
   @Get('users')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'SUPPORT')
   async getUsers() {
     return this.prisma.user.findMany({
       select: {
@@ -160,13 +161,31 @@ export class AdminController {
   }
 
   @Patch('users/:id/role')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN')
   async updateUserRole(
     @Param('id') id: string,
     @Body() body: { role: GlobalRole },
+    @CurrentUser() currentUser: { userId: string; role: string },
   ) {
     if (!body.role || !Object.values(GlobalRole).includes(body.role)) {
       throw new HttpException('Invalid role', HttpStatus.BAD_REQUEST);
+    }
+
+    if (currentUser.userId === id) {
+      throw new HttpException('You cannot change your own role', HttpStatus.FORBIDDEN);
+    }
+
+    if (currentUser.role === 'ADMIN') {
+      if (body.role === 'SUPER_ADMIN') {
+        throw new HttpException('Admins cannot promote users to SUPER_ADMIN', HttpStatus.FORBIDDEN);
+      }
+      
+      const targetUser = await this.prisma.user.findUnique({ where: { id } });
+      if (!targetUser) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      
+      if (targetUser.role === 'SUPER_ADMIN') {
+        throw new HttpException('Admins cannot change the role of a SUPER_ADMIN', HttpStatus.FORBIDDEN);
+      }
     }
     return this.prisma.user.update({
       where: { id },
@@ -176,7 +195,7 @@ export class AdminController {
   }
 
   @Get('settings')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'SUPPORT')
   async getSettings() {
     const settings = await this.prisma.systemSetting.findMany();
     const settingsMap = settings.reduce(
@@ -195,7 +214,7 @@ export class AdminController {
   }
 
   @Patch('settings')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN')
   async updateSettings(@Body() body: { defaultAutoCrawlIntervalDays: number }) {
     if (typeof body.defaultAutoCrawlIntervalDays !== 'number') {
       throw new HttpException('Invalid setting value', HttpStatus.BAD_REQUEST);
@@ -214,7 +233,7 @@ export class AdminController {
   }
 
   @Get('projects')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'SUPPORT')
   async getProjects() {
     return this.prisma.project.findMany({
       select: {
@@ -242,7 +261,7 @@ export class AdminController {
   }
 
   @Patch('projects/:id')
-  @Roles('SUPER_ADMIN')
+  @Roles('SUPER_ADMIN', 'ADMIN')
   async updateProject(
     @Param('id') id: string,
     @Body() body: { autoCrawlIntervalDays: number | null },

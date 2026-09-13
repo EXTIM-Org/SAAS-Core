@@ -17,7 +17,14 @@ export async function impersonateUserAction(userId: string, projectId: string) {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to impersonate user: API error');
+    const errorText = await response.text();
+    console.error('Impersonate API failed:', response.status, errorText);
+    try {
+      const errorJson = JSON.parse(errorText);
+      throw new Error(errorJson.message || 'Failed to impersonate user: API error');
+    } catch {
+      throw new Error('Failed to impersonate user: API error');
+    }
   }
 
   const data = await response.json();

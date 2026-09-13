@@ -62,7 +62,7 @@ export default function SignupPage() {
           Enter your email below to create your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} method="POST" action="#">
         <CardContent className="space-y-4">
           {error && (
             <div className="text-sm font-medium text-destructive">{error}</div>

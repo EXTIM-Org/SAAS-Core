@@ -19,10 +19,13 @@ interface User {
   createdAt: string;
 }
 
-export function UsersTable({ initialUsers }: { initialUsers: User[] }) {
+export function UsersTable({ initialUsers, currentUserId }: { initialUsers: User[], currentUserId: string }) {
   const [users, setUsers] = useState(initialUsers);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
+    if (!window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+      return;
+    }
     try {
       const res = await updateUserRole(userId, newRole);
       if (res.error) throw new Error(res.error);
@@ -58,9 +61,12 @@ export function UsersTable({ initialUsers }: { initialUsers: User[] }) {
                 <select
                   value={user.role}
                   onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                  className="w-[180px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  disabled={user.id === currentUserId}
+                  className="w-[180px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="USER">User</option>
+                  <option value="SUPPORT">Support</option>
+                  <option value="ADMIN">Admin</option>
                   <option value="SUPER_ADMIN">Super Admin</option>
                 </select>
               </TableCell>

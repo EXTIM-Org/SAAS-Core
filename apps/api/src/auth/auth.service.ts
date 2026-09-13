@@ -20,7 +20,7 @@ export class AuthService {
 
   private async generateTokens(
     user: Partial<User> & { userId?: string; sub?: string; role?: string },
-    impersonatorId?: string,
+    impersonator?: { id: string; role: string },
   ) {
     const userId = user.id || user.userId || user.sub;
     const payload: Record<string, unknown> = {
@@ -30,8 +30,9 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    if (impersonatorId) {
-      payload.impersonatorId = impersonatorId;
+    if (impersonator) {
+      payload.impersonatorId = impersonator.id;
+      payload.impersonatorRole = impersonator.role;
     }
     const accessToken = this.jwtService.sign(payload);
 
@@ -141,8 +142,8 @@ export class AuthService {
 
   async impersonateUser(adminId: string, targetUserId: string) {
     const admin = await this.usersService.findById(adminId);
-    if (!admin || admin.role !== 'SUPER_ADMIN') {
-      throw new UnauthorizedException('Only SUPER_ADMIN can impersonate users');
+    if (!admin || !['SUPER_ADMIN', 'ADMIN', 'SUPPORT'].includes(admin.role)) {
+      throw new UnauthorizedException('Only admins and support can impersonate users');
     }
 
     const targetUser = await this.usersService.findById(targetUserId);
@@ -150,6 +151,10 @@ export class AuthService {
       throw new UnauthorizedException('Target user not found');
     }
 
-    return this.generateTokens(targetUser, adminId);
+    if (['ADMIN', 'SUPPORT'].includes(admin.role) && targetUser.role === 'SUPER_ADMIN') {
+      throw new UnauthorizedException('You cannot impersonate a SUPER_ADMIN');
+    }
+
+    return this.generateTokens(targetUser, { id: admin.id, role: admin.role });
   }
 }

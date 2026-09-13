@@ -34,8 +34,13 @@ export class ProjectRoleGuard implements CanActivate {
       return false;
     }
 
-    // SUPER_ADMIN has access to everything
-    if (user.role === GlobalRole.SUPER_ADMIN) {
+    // SUPER_ADMIN and ADMIN have access to everything
+    if ([GlobalRole.SUPER_ADMIN, GlobalRole.ADMIN].includes(user.role)) {
+      return true;
+    }
+
+    // SUPPORT has read-only access to all projects
+    if (user.role === GlobalRole.SUPPORT && request.method === 'GET') {
       return true;
     }
 

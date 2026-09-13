@@ -5,6 +5,7 @@ import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { LoginResponse, UserPayload } from '@saas/shared';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -75,7 +76,8 @@ export class AuthController {
 
   @Post('impersonate/:userId')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Impersonate a user (SUPER_ADMIN only)' })
+  @Roles('SUPER_ADMIN', 'ADMIN', 'SUPPORT')
+  @ApiOperation({ summary: 'Impersonate a user (SUPER_ADMIN, ADMIN, SUPPORT only)' })
   @ApiResponse({
     status: 201,
     description: 'Returns an impersonation access token.',

@@ -35,6 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     };
     if (payload.impersonatorId) {
       user.impersonatorId = payload.impersonatorId;
+      user.impersonatorRole = payload.impersonatorRole;
     }
     return user;
   }
