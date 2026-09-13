@@ -1,5 +1,5 @@
-import { PrismaClient } from '@saas/database';
-import * as bcrypt from 'bcrypt';
+import { PrismaClient, GlobalRole } from '@saas/database';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -11,14 +11,12 @@ async function main() {
     where: { email },
     update: {
       password,
-      globalRole: 'SUPER_ADMIN',
+      role: GlobalRole.SUPER_ADMIN,
     },
     create: {
       email,
       password,
-      firstName: 'Admin',
-      lastName: 'User',
-      globalRole: 'SUPER_ADMIN',
+      role: GlobalRole.SUPER_ADMIN,
     },
   });
 
