@@ -14,6 +14,8 @@ import { OrdersModule } from './orders/orders.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ProjectMembersModule } from './project-members/project-members.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
+import { PublicApiModule } from './public-api/public-api.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { ProjectMembersModule } from './project-members/project-members.module';
     AdminModule,
     NotificationsModule,
     ProjectMembersModule,
+    ApiKeysModule,
+    PublicApiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

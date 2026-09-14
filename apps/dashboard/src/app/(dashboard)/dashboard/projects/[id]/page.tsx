@@ -47,6 +47,7 @@ import {
   BarChart2,
   LayoutDashboard,
   ExternalLink,
+  Key,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -93,7 +94,7 @@ export default function ProjectDetailsPage() {
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'analytics' | 'products'
+    'overview' | 'analytics' | 'products' | 'api-keys'
   >('overview');
 
   const [indexedProducts, setIndexedProducts] = useState<any[]>([]);
@@ -139,6 +140,60 @@ export default function ProjectDetailsPage() {
       fetchAnalytics();
     }
   }, [activeTab, fetchAnalytics]);
+
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [isCreatingKey, setIsCreatingKey] = useState(false);
+  const [isDeletingKey, setIsDeletingKey] = useState<string | null>(null);
+
+  const fetchApiKeys = useCallback(async () => {
+    const { getApiKeysAction } = await import('@/app/actions/api-keys');
+    const res = await getApiKeysAction(projectId);
+    if (res.success && res.data) {
+      setApiKeys(res.data);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (activeTab === 'api-keys') {
+      fetchApiKeys();
+    }
+  }, [activeTab, fetchApiKeys]);
+
+  const handleCreateApiKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyName.trim()) return;
+    setIsCreatingKey(true);
+    const { createApiKeyAction } = await import('@/app/actions/api-keys');
+    const res = await createApiKeyAction(projectId, newKeyName);
+    if (res.success && res.data) {
+      toast.success('API Key created successfully!');
+      setNewKeyName('');
+      fetchApiKeys();
+    } else {
+      toast.error(res.error || 'Failed to create API Key');
+    }
+    setIsCreatingKey(false);
+  };
+
+  const handleDeleteApiKey = async (keyId: string) => {
+    if (!confirm('Are you sure you want to revoke this API Key? Any application using it will lose access.')) return;
+    setIsDeletingKey(keyId);
+    const { deleteApiKeyAction } = await import('@/app/actions/api-keys');
+    const res = await deleteApiKeyAction(projectId, keyId);
+    if (res.success) {
+      toast.success('API Key revoked successfully');
+      setApiKeys(apiKeys.filter((k) => k.id !== keyId));
+    } else {
+      toast.error(res.error || 'Failed to revoke API Key');
+    }
+    setIsDeletingKey(null);
+  };
+
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    toast.success('API Key copied to clipboard!');
+  };
 
   const handleCopySnippet = () => {
     navigator.clipboard.writeText(
@@ -500,6 +555,13 @@ export default function ProjectDetailsPage() {
           className="gap-2"
         >
           <Package className="h-4 w-4" /> Products
+        </Button>
+        <Button
+          variant={activeTab === 'api-keys' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('api-keys')}
+          className="gap-2"
+        >
+          <Key className="h-4 w-4" /> API Keys
         </Button>
       </div>
 
@@ -1343,6 +1405,92 @@ export default function ProjectDetailsPage() {
           </Card>
 
                   </div>
+      )}
+      {/* API Keys Tab */}
+      {activeTab === 'api-keys' && (
+        <div className="flex flex-col gap-8">
+          <Card className="shadow-sm border-border bg-card">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                API Keys
+              </CardTitle>
+              <CardDescription>
+                Manage API keys for accessing the Search API. Do not share your API keys in public repositories.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+              <form onSubmit={handleCreateApiKey} className="flex gap-4">
+                <Input
+                  type="text"
+                  placeholder="E.g., Production Key"
+                  value={newKeyName}
+                  onChange={(e) => setNewKeyName(e.target.value)}
+                  disabled={isCreatingKey}
+                  className="max-w-sm"
+                />
+                <Button
+                  type="submit"
+                  disabled={isCreatingKey || !newKeyName.trim()}
+                >
+                  {isCreatingKey ? 'Creating...' : 'Create New Key'}
+                </Button>
+              </form>
+
+              <div className="rounded-md border">
+                {apiKeys.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No API keys created yet.
+                  </div>
+                ) : (
+                  <ul className="divide-y max-h-96 overflow-y-auto">
+                    {apiKeys.map((key) => (
+                      <li
+                        key={key.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4"
+                      >
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-medium">{key.name}</span>
+                          <span className="text-xs font-mono text-muted-foreground mt-1 bg-muted px-2 py-1 rounded inline-block w-fit">
+                            {key.key}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            Created: {new Date(key.createdAt).toLocaleDateString()}
+                            {key.lastUsedAt && ` • Last used: ${new Date(key.lastUsedAt).toLocaleDateString()}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopyKey(key.key)}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteApiKey(key.id)}
+                            disabled={isDeletingKey === key.id}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            title="Revoke Key"
+                          >
+                            {isDeletingKey === key.id ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
