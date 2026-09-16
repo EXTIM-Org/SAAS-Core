@@ -269,6 +269,28 @@ Typesense is derived state. Once implemented, the Search Service must provide a 
 - Any change to setup must update this document
 - The fresh-clone workflow is a hard requirement
 
+## 15. Remote Docker Services (SSH Tunnel)
+
+If you are running the Docker infrastructure (PostgreSQL, Redis, Typesense) on a remote server (e.g. `192.168.137.113`) and want to develop locally, **do not open the database ports to the internet or public network**. Instead, use an SSH tunnel to forward the remote ports to your local machine securely.
+
+### Establishing the SSH Tunnel
+
+Run the following command in your local terminal (keep it running while developing):
+
+```bash
+ssh -N -L 5432:127.0.0.1:5432 -L 6379:127.0.0.1:6379 -L 8108:127.0.0.1:8108 username@192.168.137.113
 ```
 
+- `-N`: Do not execute a remote command (just forwards ports).
+- `-L`: Forwards your local port to the remote server's port.
+
+### Environment Configuration
+
+When the SSH tunnel is active, your local machine connects to the remote services as if they were running locally. Therefore, your local `.env` file **must** point to `127.0.0.1` (do NOT use the remote server's IP in `.env`):
+
+```env
+DATABASE_URL=postgresql://saas:saas-local-password@127.0.0.1:5432/saas?schema=public
+REDIS_URL=redis://127.0.0.1:6379
+TYPESENSE_URL=http://127.0.0.1:8108
+NEXT_PUBLIC_TYPESENSE_HOST=127.0.0.1
 ```
