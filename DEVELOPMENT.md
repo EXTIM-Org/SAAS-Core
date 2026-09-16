@@ -278,10 +278,12 @@ If you are running the Docker infrastructure (PostgreSQL, Redis, Typesense) on a
 Run the following command in your local terminal (keep it running while developing):
 
 ```bash
-ssh -N -L 5432:127.0.0.1:5432 -L 6379:127.0.0.1:6379 -L 8108:127.0.0.1:8108 username@192.168.137.113
+ssh -N -L 5432:127.0.0.1:5432 -L 6379:127.0.0.1:6379 -L 8108:127.0.0.1:8108 -o ServerAliveInterval=60 -o ServerAliveCountMax=3 username@server_ip
 ```
 
 - `-N`: Do not execute a remote command (just forwards ports).
+- `-o ServerAliveInterval=60`: Sends a keep-alive signal every 60 seconds to prevent the connection from dropping due to inactivity.
+- `-o ServerAliveCountMax=3`: Drops the connection only if 3 consecutive keep-alive signals fail.
 - `-L`: Forwards your local port to the remote server's port.
 
 ### Environment Configuration
