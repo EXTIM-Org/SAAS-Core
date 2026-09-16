@@ -28,7 +28,7 @@ import { CrawlSchedulerService } from './crawl-scheduler.service';
           url:
             configService.get<string>('REDIS_URL') ||
             configService.get<string>('REDIS_URL_DOCKER') ||
-            'redis://192.168.137.113:6379',
+            'redis://127.0.0.1:6379',
         },
       }),
       inject: [ConfigService],
@@ -72,7 +72,7 @@ import { CrawlSchedulerService } from './crawl-scheduler.service';
         const url =
           configService.get<string>('TYPESENSE_URL') ||
           configService.get<string>('TYPESENSE_URL_DOCKER') ||
-          'http://192.168.137.113:8108';
+          'http://127.0.0.1:8108';
         const apiKey =
           configService.get<string>('TYPESENSE_API_KEY') ||
           'typesense-local-key';

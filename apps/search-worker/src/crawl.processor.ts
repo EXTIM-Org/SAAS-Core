@@ -50,7 +50,7 @@ export class CrawlProcessor extends WorkerHost {
     const redisUrl =
       process.env.REDIS_URL ||
       process.env.REDIS_URL_DOCKER ||
-      'redis://192.168.137.113:6379';
+      'redis://127.0.0.1:6379';
     this.redisClient = new Redis(redisUrl);
     this.httpsAgent = new https.Agent({
       rejectUnauthorized: false,

@@ -67,7 +67,7 @@ export class CrawlSchedulerService {
       this.logger.log(`Found ${domainsToCrawl.length} domains to re-crawl.`);
 
       const redis = new Redis({
-        host: this.configService.get<string>('REDIS_HOST') || '192.168.137.113',
+        host: this.configService.get<string>('REDIS_HOST') || '127.0.0.1',
         port: parseInt(
           this.configService.get<string>('REDIS_PORT') || '6379',
           10,

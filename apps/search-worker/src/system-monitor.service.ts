@@ -17,7 +17,7 @@ export class SystemMonitorService {
     const redisUrl =
       this.configService.get<string>('REDIS_URL') ||
       this.configService.get<string>('REDIS_URL_DOCKER') ||
-      'redis://192.168.137.113:6379';
+      'redis://127.0.0.1:6379';
     this.redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
     this.redis.on('error', (err) => this.logger.error('Redis error', err));
   }
