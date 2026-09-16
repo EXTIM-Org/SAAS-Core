@@ -23,14 +23,15 @@ import { CrawlSchedulerService } from './crawl-scheduler.service';
     ScheduleModule.forRoot(),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        connection: {
-          url:
-            configService.get<string>('REDIS_URL') ||
-            configService.get<string>('REDIS_URL_DOCKER') ||
-            'redis://127.0.0.1:6379',
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (!redisUrl) {
+          throw new Error('REDIS_URL environment variable is missing');
+        }
+        return {
+          connection: { url: redisUrl },
+        };
+      },
       inject: [ConfigService],
     }),
     BullModule.registerQueue({
@@ -69,13 +70,14 @@ import { CrawlSchedulerService } from './crawl-scheduler.service';
       provide: 'TYPESENSE_CLIENT',
       useFactory: async (configService: ConfigService) => {
         const { Client } = await import('typesense');
-        const url =
-          configService.get<string>('TYPESENSE_URL') ||
-          configService.get<string>('TYPESENSE_URL_DOCKER') ||
-          'http://127.0.0.1:8108';
-        const apiKey =
-          configService.get<string>('TYPESENSE_API_KEY') ||
-          'typesense-local-key';
+        const url = configService.get<string>('TYPESENSE_URL');
+        if (!url) {
+          throw new Error('TYPESENSE_URL environment variable is missing');
+        }
+        const apiKey = configService.get<string>('TYPESENSE_API_KEY');
+        if (!apiKey) {
+          throw new Error('TYPESENSE_API_KEY environment variable is missing');
+        }
 
         const urlObj = new URL(url);
 

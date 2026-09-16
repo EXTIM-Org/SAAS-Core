@@ -66,13 +66,11 @@ export class CrawlSchedulerService {
 
       this.logger.log(`Found ${domainsToCrawl.length} domains to re-crawl.`);
 
-      const redis = new Redis({
-        host: this.configService.get<string>('REDIS_HOST') || '127.0.0.1',
-        port: parseInt(
-          this.configService.get<string>('REDIS_PORT') || '6379',
-          10,
-        ),
-      });
+      const redisUrl = this.configService.get<string>('REDIS_URL');
+      if (!redisUrl) {
+        throw new Error('REDIS_URL environment variable is missing');
+      }
+      const redis = new Redis(redisUrl);
 
       for (const domain of domainsToCrawl) {
         const url = `https://${domain.name}`;

@@ -14,10 +14,10 @@ export class SystemMonitorService {
   private previousCpuInfo = this.getCpuInfo();
 
   constructor(private configService: ConfigService) {
-    const redisUrl =
-      this.configService.get<string>('REDIS_URL') ||
-      this.configService.get<string>('REDIS_URL_DOCKER') ||
-      'redis://127.0.0.1:6379';
+    const redisUrl = this.configService.get<string>('REDIS_URL');
+    if (!redisUrl) {
+      throw new Error('REDIS_URL environment variable is missing');
+    }
     this.redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
     this.redis.on('error', (err) => this.logger.error('Redis error', err));
   }

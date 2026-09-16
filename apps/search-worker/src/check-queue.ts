@@ -1,12 +1,16 @@
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-const connection = new Redis({
-  host: '127.0.0.1',
-  port: 6379,
-  maxRetriesPerRequest: null,
-});
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
+const redisUrl = process.env.REDIS_URL;
+if (!redisUrl) {
+  throw new Error('REDIS_URL environment variable is missing in .env');
+}
+
+const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 const myQueue = new Queue('crawl-queue', { connection });
 
 async function check() {

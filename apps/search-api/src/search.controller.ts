@@ -28,7 +28,10 @@ export class SearchController {
     @Inject('TYPESENSE_CLIENT') private readonly typesenseClient: Client,
     @InjectQueue('crawl-queue') private readonly crawlQueue: Queue,
   ) {
-    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error('REDIS_URL environment variable is missing');
+    }
     this.redisClient = new Redis(redisUrl, { maxRetriesPerRequest: null });
   }
 

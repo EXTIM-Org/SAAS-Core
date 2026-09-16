@@ -47,10 +47,10 @@ export class CrawlProcessor extends WorkerHost {
     @InjectQueue('crawl-queue') private readonly crawlQueue: Queue,
   ) {
     super();
-    const redisUrl =
-      process.env.REDIS_URL ||
-      process.env.REDIS_URL_DOCKER ||
-      'redis://127.0.0.1:6379';
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error('REDIS_URL environment variable is missing');
+    }
     this.redisClient = new Redis(redisUrl);
     this.httpsAgent = new https.Agent({
       rejectUnauthorized: false,
