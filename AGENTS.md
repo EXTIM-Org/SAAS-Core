@@ -160,6 +160,7 @@ Critical paths (auth, authorization, tenant isolation, search) require negative-
 - Keep commits focused.
 - Do not mix unrelated refactors with feature work.
 - Prefer small pull requests.
+- **NEVER execute `git push` or push changes to any remote repository automatically.** You must always ask for explicit human approval before pushing.
 
 ## Documentation
 
